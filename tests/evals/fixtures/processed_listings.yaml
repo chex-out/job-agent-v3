@@ -1,0 +1,93 @@
+listings:
+  - url: "https://jobs.lever.co/acme/marketing-manager"
+    source: "indeed"
+    date_added: "2026-03-15"
+    date_scored: "2026-03-15"
+    company_name: "Acme AI"
+    role_title: "Marketing Manager"
+    location: "Singapore (hybrid)"
+    job_type: "full-time"
+    key_requirements:
+      - "5+ years B2B marketing experience"
+      - "Marketing automation (HubSpot or Marketo)"
+      - "Content strategy and demand generation"
+    nice_to_haves:
+      - "SaaS experience"
+      - "APAC market knowledge"
+    salary_range: null
+    skills_fit: 8
+    preference_fit: 7
+    skills_reasoning: "Strong skills alignment — B2B SaaS, marketing automation, demand gen all present"
+    preference_reasoning: "Series B AI company, small marketing team, APAC presence"
+    fit_assessment: "strong"
+    concerns:
+      - "JD mentions enterprise sales motion — candidate's background skews mid-market"
+    strengths:
+      - "HubSpot certification directly matches stated requirement"
+      - "7 years experience exceeds 5+ requirement"
+    status: "scored"
+    prepared: false
+    digested: false
+    culture_notes: null
+    drive_folder_url: null
+
+  - url: "https://careers.betacorp.com/jobs/growth-marketing-manager"
+    source: "careers_page"
+    date_added: "2026-03-16"
+    date_scored: "2026-03-16"
+    company_name: "BetaCorp"
+    role_title: "Growth Marketing Manager"
+    location: "Remote"
+    job_type: "full-time"
+    key_requirements:
+      - "Paid acquisition (Google Ads, LinkedIn)"
+      - "Marketing analytics"
+      - "Cross-functional collaboration"
+    nice_to_haves:
+      - "Python or SQL for data analysis"
+    salary_range: "SGD 8,000–12,000/month"
+    skills_fit: 7
+    preference_fit: 6
+    skills_reasoning: "Good fit on paid and analytics — SQL note is nice-to-have only, not a deal-breaker"
+    preference_reasoning: "Decent AI signals in product description, remote-first culture"
+    fit_assessment: "strong"
+    concerns:
+      - "SQL mentioned as nice-to-have — may come up in interviews"
+    strengths:
+      - "Google Analytics certification is a direct match"
+      - "Remote policy aligns with preference"
+    status: "applied"
+    prepared: true
+    digested: true
+    culture_notes: "Glassdoor 4.2/5 — Pros: flexible hours, fast-moving. Cons: limited career progression"
+    drive_folder_url: null
+
+  - url: "https://boards.greenhouse.io/gammaco/jobs/789012"
+    source: "linkedin"
+    date_added: "2026-03-10"
+    date_scored: "2026-03-10"
+    company_name: "GammaCo"
+    role_title: "Senior Marketing Manager"
+    location: "Singapore (onsite)"
+    job_type: "full-time"
+    key_requirements:
+      - "Enterprise B2B marketing"
+      - "Account-based marketing"
+      - "Python required for data work"
+    nice_to_haves: []
+    salary_range: null
+    skills_fit: 4
+    preference_fit: 3
+    skills_reasoning: "Python required (deal-breaker) and enterprise ABM focus is a stretch"
+    preference_reasoning: "Product appears to have minimal AI, large corp structure"
+    fit_assessment: "weak"
+    concerns:
+      - "Python is a hard requirement — deal-breaker per profile"
+      - "Onsite-only conflicts with work arrangement preference"
+    strengths:
+      - "B2B experience broadly relevant"
+    status: "skipped"
+    prepared: false
+    digested: false
+    culture_notes: null
+    drive_folder_url: null

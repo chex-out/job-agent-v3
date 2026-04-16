@@ -1,0 +1,56 @@
+name: Weekly Job Digest
+
+on:
+  schedule:
+    - cron: '0 2 * * 3'  # Wed 2 AM UTC = 10 AM SGT
+  workflow_dispatch: {}   # manual trigger
+
+permissions:
+  contents: write
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -e .
+
+      - name: Ingest URLs from Gmail
+        env:
+          GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+        run: python -m src.ingestor
+
+      - name: Score new listings
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python -m src.scout
+
+      - name: Prepare high-scoring listings
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python -m src.preparer
+
+      - name: Send digest email
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          DIGEST_FROM_EMAIL: ${{ secrets.DIGEST_FROM_EMAIL }}
+          DIGEST_TO_EMAIL: ${{ secrets.DIGEST_TO_EMAIL }}
+        run: python -m src.digest
+
+      - name: Commit state changes
+        run: |
+          git config user.name "Job Agent"
+          git config user.email "job-agent[bot]@users.noreply.github.com"
+          for f in data/input_listings.yaml data/processed_listings.yaml data/processed_reply_ids.yaml coaching_state.md; do
+            [ -f "$f" ] && git add -f "$f"
+          done
+          git diff --staged --quiet || git commit -m "chore: weekly job digest $(date +%Y-%m-%d)"
+          git pull --rebase
+          git push

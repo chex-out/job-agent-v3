@@ -1,0 +1,76 @@
+schema_version: "1.0"
+
+name: "Alex Rivera"
+target_roles:
+  - "Marketing Manager"
+  - "Growth Marketing Manager"
+seniority: "mid-career"
+location: "Singapore"
+preferred_work_arrangement: "hybrid or remote"
+experience_years: 7
+
+key_skills:
+  - "B2B demand generation"
+  - "Marketing automation (HubSpot, Marketo)"
+  - "Content strategy"
+  - "Paid acquisition (Google, LinkedIn)"
+  - "Analytics and reporting"
+  - "Team management"
+
+positioning_strengths:
+  - "Proven pipeline generation at Series B/C SaaS companies"
+  - "Hands-on across the full funnel — strategy and execution"
+  - "Strong analytical mindset with a bias toward measurable outcomes"
+
+known_concerns:
+  - "Limited enterprise (>1000 seat) experience"
+  - "No direct product marketing title, though scope has overlapped"
+
+certifications:
+  - "HubSpot Marketing Certified"
+  - "Google Analytics Certified"
+
+company_preferences:
+  minimum_bar:
+    - "AI must be demonstrably present in the product (not just a buzzword)"
+  ideal_signals:
+    - "50-500 person B2B SaaS"
+    - "Small marketing team with ownership opportunities"
+    - "Strong growth trajectory (Series A-C or proven revenue)"
+  nice_to_have:
+    - "Category creation or expansion stage"
+    - "APAC presence or headquarters"
+  deal_breakers:
+    - "Python or SQL as a hard requirement"
+    - "No AI or technology component in the product"
+    - "Pure services or consulting firm"
+
+scoring:
+  threshold_for_preparation: 7
+  threshold_for_coaching: 7
+  glassdoor_enrich_limit: 5
+  dimensions:
+    skills_fit:
+      description: "Score 0-10: How well can this candidate perform in this role?"
+      components:
+        role_match: "0-4 points: Does the role match target function and seniority?"
+        skills_alignment: "0-4 points: How many key skills appear in JD requirements?"
+        location_fit: "0-2 points: Does location/remote policy match candidate needs?"
+      deal_breakers: []
+    preference_fit:
+      description: "Score 0-10: How well does this company/role match what the candidate wants?"
+      components:
+        ai_seriousness: "0-4 points: How genuinely AI-focused is the company?"
+        role_scope: "0-3 points: Does the role scope excite the candidate?"
+        company_fit: "0-2 points: Does the company size/type match preferences?"
+        autonomy_signal: "0-1 points: Does the JD signal ownership and building?"
+      deal_breakers: []
+
+feedback_directness: 5
+
+resume_path: "config/resume_base.md"
+cover_letter_path: "config/cover_letter_base.md"
+
+search:
+  max_age_days: 30
+  additional_keywords: []

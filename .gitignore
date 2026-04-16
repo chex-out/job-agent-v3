@@ -1,0 +1,52 @@
+# Environment variables — never commit your API keys
+.env
+.env.local
+
+# User data — personal job search state (not for sharing)
+config/profile.yaml
+config/resume_base.md
+config/cover_letter_base.md
+config/gmail_credentials.json
+config/gmail_token.json
+config/content_voice.md
+data/
+!data/.gitkeep
+
+# Coaching state — personal career data
+coaching_state.md
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+.venv/
+venv/
+env/
+
+# Test output
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log

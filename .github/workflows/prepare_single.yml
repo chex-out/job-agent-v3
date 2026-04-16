@@ -1,0 +1,67 @@
+name: Prepare Single Listing
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: 'Job listing URL'
+        required: true
+      source:
+        description: 'Source (linkedin, indeed, careers_page, other)'
+        required: false
+        default: 'other'
+      listing_text:
+        description: 'Paste job listing text here (for gated sites like Indeed — leave blank to auto-fetch)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -e .
+
+      - name: Score listing
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          LISTING_TEXT: ${{ github.event.inputs.listing_text }}
+        run: |
+          if [ -n "$LISTING_TEXT" ]; then
+            printf '%s' "$LISTING_TEXT" > /tmp/listing_text.txt
+            python -m src.scout --url "${{ github.event.inputs.url }}" --source "${{ github.event.inputs.source }}" --text-file /tmp/listing_text.txt
+          else
+            python -m src.scout --url "${{ github.event.inputs.url }}" --source "${{ github.event.inputs.source }}"
+          fi
+
+      - name: Prepare if above threshold
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python -m src.preparer --url "${{ github.event.inputs.url }}"
+
+      - name: Send results email
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          DIGEST_FROM_EMAIL: ${{ secrets.DIGEST_FROM_EMAIL }}
+          DIGEST_TO_EMAIL: ${{ secrets.DIGEST_TO_EMAIL }}
+        run: python -m src.digest --url "${{ github.event.inputs.url }}"
+
+      - name: Commit changes
+        run: |
+          git config user.name "Job Agent"
+          git config user.email "job-agent[bot]@users.noreply.github.com"
+          for f in data/input_listings.yaml data/processed_listings.yaml data/processed_reply_ids.yaml coaching_state.md; do
+            [ -f "$f" ] && git add -f "$f"
+          done
+          git diff --staged --quiet || git commit -m "chore: prepare listing $(date +%Y-%m-%d)"
+          git pull --rebase
+          git push

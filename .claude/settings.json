@@ -1,0 +1,30 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python src/hooks/session_log.py"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python src/hooks/validate_yaml.py"
+          },
+          {
+            "type": "command",
+            "command": "python src/hooks/check_coaching_state.py"
+          }
+        ]
+      }
+    ]
+  }
+}
