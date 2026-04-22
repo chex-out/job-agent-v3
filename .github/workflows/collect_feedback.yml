@@ -2,7 +2,7 @@ name: Collect Feedback
 
 on:
   schedule:
-    - cron: '0 14 * * *'  # Daily 2 PM UTC = 10 PM SGT
+    
   workflow_dispatch: {}    # manual trigger
 
 permissions:
