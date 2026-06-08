@@ -10,7 +10,7 @@ config/gmail_credentials.json
 config/gmail_token.json
 config/linkedin_cookies.json
 config/content_voice.md
-data/
+data/*
 !data/.gitkeep
 
 # Coaching state — personal career data
@@ -35,6 +35,9 @@ env/
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Claude Code local overrides (personal allowlists, machine-specific paths)
+.claude/settings.local.json
 
 # IDE
 .vscode/

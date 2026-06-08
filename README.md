@@ -20,6 +20,8 @@ Before you start, you need:
 1. **Python 3.11 or higher**
 2. **Claude Code** (the CLI tool)
 3. **An Anthropic API key**
+4. **Your resume text** — have it ready to paste during setup (plain text or Markdown is fine)
+5. **A cover letter draft** — a rough starting point to tailor from; doesn't need to be polished
 
 ---
 
@@ -57,8 +59,8 @@ If you see `npm not found`, you need Node.js first: [nodejs.org](https://nodejs.
 In Command Prompt:
 
 ```
-git clone https://github.com/YOUR_USERNAME/job-seeker-toolkit.git
-cd job-seeker-toolkit
+git clone https://github.com/chex-out/job-agent-v3.git
+cd job-agent-v3
 python -m pip install -e .
 ```
 
@@ -88,6 +90,18 @@ Once Claude Code is running in your terminal, type:
 ```
 
 Follow the conversation — Claude will ask you questions and build your profile automatically. Takes about 10 minutes.
+
+### Step 8 — Enable Job Search (Indeed MCP)
+
+In the Claude Code terminal, run:
+
+```
+claude mcp add @anthropic-ai/mcp-server-indeed
+```
+
+Then restart Claude Code (`exit`, then run `claude` again). This enables `/find-jobs` to search Indeed automatically.
+
+If you skip this step, `/find-jobs` will only search company career pages for companies you name manually — no automated Indeed results.
 
 ---
 
@@ -125,8 +139,8 @@ If `npm` is not found, install Node.js: [nodejs.org](https://nodejs.org) → dow
 ### Step 4 — Clone and Set Up the Repo
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/job-seeker-toolkit.git
-cd job-seeker-toolkit
+git clone https://github.com/chex-out/job-agent-v3.git
+cd job-agent-v3
 pip3 install -e .
 ```
 
@@ -154,6 +168,16 @@ A browser window will open to authenticate.
 ```
 
 Claude will walk you through profile creation. Takes about 10 minutes.
+
+### Step 8 — Enable Job Search (Indeed MCP)
+
+```bash
+claude mcp add @anthropic-ai/mcp-server-indeed
+```
+
+Then restart Claude Code (`exit`, then run `claude` again). This enables `/find-jobs` to search Indeed automatically.
+
+If you skip this step, `/find-jobs` will only search company career pages for companies you name manually — no automated Indeed results.
 
 ---
 
@@ -195,8 +219,8 @@ Install Node.js if needed: [nodejs.org](https://nodejs.org) or via your package 
 ### Step 4 — Clone and Set Up the Repo
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/job-seeker-toolkit.git
-cd job-seeker-toolkit
+git clone https://github.com/chex-out/job-agent-v3.git
+cd job-agent-v3
 pip3 install -e .
 ```
 
@@ -220,6 +244,16 @@ claude
 ```
 /setup
 ```
+
+### Step 8 — Enable Job Search (Indeed MCP)
+
+```bash
+claude mcp add @anthropic-ai/mcp-server-indeed
+```
+
+Then restart Claude Code (`exit`, then run `claude` again). This enables `/find-jobs` to search Indeed automatically.
+
+If you skip this step, `/find-jobs` will only search company career pages for companies you name manually — no automated Indeed results.
 
 ---
 
