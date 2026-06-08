@@ -8,6 +8,7 @@ config/resume_base.md
 config/cover_letter_base.md
 config/gmail_credentials.json
 config/gmail_token.json
+config/linkedin_cookies.json
 config/content_voice.md
 data/
 !data/.gitkeep

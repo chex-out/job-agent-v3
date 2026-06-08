@@ -33,6 +33,10 @@ If the user wants to tailor a listing below threshold, confirm: "This listing sc
 
 ## Tailoring
 
+**Before drafting the cover letter — mandatory pre-draft steps:**
+1. If `config/content_voice.md` exists, read it — it contains the user's voice rules and confirmed style preferences. Every rule in that file applies to this draft.
+2. Glob `data/prepared/*/cover_letter.md` to find previously reviewed cover letters. Read the most recent one for voice calibration — do not redraft recurring story paragraphs from scratch. Start from the last reviewed version of each recurring story.
+
 Using the loaded profile, resume base, and cover letter base, generate tailored documents for the target listing.
 
 **CRITICAL CONSTRAINT — applies to every tailored output:**
@@ -48,6 +52,24 @@ Extract the Agent Instructions section from `cover_letter_base.md` (the section 
 - Start right at the highest-tension moment: lead with the strongest signal, not a formality.
 - Example of what NOT to write: *"I was excited to see the Marketing Manager role at Acme AI posted on LinkedIn..."*
 - Example of the right approach: *"I've spent 7 years building demand gen from zero at Series B SaaS companies — exactly the motion [Company] is describing for this role."*
+
+---
+
+## Voice Scan
+
+After drafting the cover letter and before the anti-fabrication pass, run a voice scan. If `config/content_voice.md` exists, check every paragraph against the rules in that file. Whether or not a voice guide exists, check for these common violations:
+
+- Signposting phrases — "which turns out to be relevant", "it is worth noting", "this means that"
+- Staccato or fragment sentences — contrast should be held within one sentence using "while/although/whereas"
+- Results without mechanism — every metric needs its "how"
+- Intensifiers — "genuinely", "truly", "really", "incredibly"
+- Characterising the applicant pool — lead with what the candidate does, not what others don't do
+- "I believe" paired with a capability claim in the same sentence
+- Gap-acknowledgment meta-sentences — "I'm naming this because...", "I want to be transparent..."
+- Bare noun-phrase openers — full first-person sentences only
+- Reciting the company's own stats back to them as an opener
+
+**Fix all violations silently before saving.** Do not surface minor style corrections to the user unless they change meaning or require a factual decision.
 
 ---
 

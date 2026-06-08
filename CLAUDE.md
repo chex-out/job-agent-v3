@@ -165,7 +165,7 @@ All Python file I/O:
 | LinkedIn/Chrome as Mode 4 opt-in | TOS risk; default path uses Indeed MCP | 2026-03 |
 | `schema_version` in profile.yaml | Enable forward migration without silent failures | 2026-03 |
 | Firecrawl as Mode 2 career page fetcher | trafilatura can't render JS-heavy SPAs (Ashby, Lever, Workday); Firecrawl handles rendering + structured extraction; falls back to trafilatura if unconfigured | 2026-04 |
-| Apify as Mode 5 opt-in (`--apify`) | Extends search to LinkedIn/Glassdoor via proxy-backed actors; MCP server integration; lower TOS risk than browser automation | 2026-04 |
+| Apify as Mode 5 opt-in (`--apify`) | Authenticated LinkedIn search via `curious_coder/linkedin-jobs-search-scraper`; uses LinkedIn session cookies + user agent from profile.yaml; returns skills/applicant insights unavailable without auth; lower TOS risk than browser automation | 2026-04 |
 | Dual-axis ScoringThreshold (skills_fit_min + preference_fit_min) | Single-int threshold conflated capability match with preference match; dual axis separates them — a weak-preference strong-skills listing should score differently from the reverse | 2026-04 |
 
 ---

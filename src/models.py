@@ -140,6 +140,11 @@ class UserProfile(BaseModel):
         }
     )
 
+    # LinkedIn config (optional — only needed for --apify mode)
+    linkedin: dict[str, Any] = Field(
+        default_factory=dict
+    )  # user_agent: set once; used by Mode 5 Apify actor auth
+
     @classmethod
     def from_profile_yaml(cls, path: str | Path) -> "UserProfile":
         """Load and validate UserProfile from profile.yaml."""

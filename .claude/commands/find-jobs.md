@@ -61,21 +61,51 @@ Flag ratings below 3.0 with ⚠️ in the score card. Add culture notes to the l
 
 Hard cap: never enrich more than `glassdoor_enrich_limit` listings per search run.
 
-### Mode 5 — Apify (opt-in only, `--apify` flag required)
+### Mode 5 — Apify LinkedIn Search (opt-in only, `--apify` flag required)
 
 **Only run if the user explicitly invokes `/find-jobs --apify`.**
 
-Apify provides access to job listings from LinkedIn and Glassdoor via proxy-backed actors — without browser automation. Requires an Apify account and `APIFY_TOKEN` in `.env`.
+Apify provides authenticated LinkedIn job search via proxy-backed actors — without browser automation. Returns skills data, applicant insights, and recruiter details that unauthenticated scraping cannot access. Requires `APIFY_TOKEN` in `.env`.
 
 If `APIFY_TOKEN` is not set, respond: *"Apify search requires an API token. Add `APIFY_TOKEN=your_token` to your `.env` file. You can get one at apify.com."* — then stop.
 
-If configured, use the Apify MCP server to run:
-- **LinkedIn Jobs:** Actor `curious_coder/linkedin-jobs-scraper` — search by role title + location
-- **Glassdoor Jobs:** Glassdoor actor — search by role title + location
+**Authentication setup (one-time):**
+
+1. **LinkedIn cookies** — required. Check for `config/linkedin_cookies.json`. If missing, prompt:
+   > "Apify mode needs your LinkedIn session cookies. Export them using the Cookie-Editor Chrome extension while logged into LinkedIn (export as JSON array), then save the file to `config/linkedin_cookies.json`."
+   Do not proceed until the file exists.
+
+2. **User agent** — check `profile.yaml` for `linkedin.user_agent`. If missing, prompt the user to paste their browser's user agent string (find it at `whatismybrowser.com`) and save it to `profile.yaml` under `linkedin.user_agent`. This is a one-time setup.
+
+**Search URL construction:**
+Navigate to LinkedIn Jobs while logged in and construct a search URL with:
+- Keyword: target role title from profile.yaml
+- Location: from `profile.yaml` location field (geoId for Singapore: `102454443`)
+- Job type: Full-time (`f_JT=F`)
+
+Copy the full URL from the address bar — this is the `searchUrl` actor input.
+
+**Actor:** `curious_coder/linkedin-jobs-search-scraper`
+
+**Actor input:**
+```json
+{
+  "searchUrl": "[constructed LinkedIn Jobs URL]",
+  "cookies": [contents of config/linkedin_cookies.json],
+  "userAgent": "[from profile.yaml linkedin.user_agent]",
+  "count": 25,
+  "scrapeJobDetails": true,
+  "scrapeSkills": true,
+  "scrapeCompany": false
+}
+```
+
+**Cookie rejection handling:** If Apify returns an auth error or zero results, prompt:
+> "Your LinkedIn cookies may have expired. Re-export them using Cookie-Editor while logged into LinkedIn, then replace `config/linkedin_cookies.json`."
 
 Present results in the same score card format as Mode 1. Deduplicate against URLs already in the pipeline.
 
-**Note:** Even via API, scraping LinkedIn may conflict with their terms of service. This mode is provided as an opt-in for users who accept that risk. Claude does not endorse scraping any platform in violation of its ToS.
+**Note:** Even via API, scraping LinkedIn may conflict with their terms of service. This mode is opt-in for users who accept that risk. Claude does not endorse scraping any platform in violation of its ToS.
 
 ### Mode 4 — LinkedIn via Chrome Extension (opt-in only, `--linkedin` flag required)
 
