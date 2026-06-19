@@ -25,7 +25,7 @@ For each target role in `target_roles`, generate 2-3 search queries using:
 
 For each result, use `get_job_details` to fetch the full listing text. Filter out listings older than `search.max_age_days` in profile.yaml (default: 30 days).
 
-Deduplicate against URLs already in `data/processed_listings.yaml` and `data/input_listings.yaml`.
+Deduplicate against URLs already in the pipeline. Use `Grep` to search for each URL in `data/processed_listings.yaml` and `data/input_listings.yaml` — never read these files in full.
 
 ### Mode 2 — Company Career Pages (runs if target companies identified)
 
@@ -75,15 +75,18 @@ If `APIFY_TOKEN` is not set, respond: *"Apify search requires an API token. Add 
    > "Apify mode needs your LinkedIn session cookies. Export them using the Cookie-Editor Chrome extension while logged into LinkedIn (export as JSON array), then save the file to `config/linkedin_cookies.json`."
    Do not proceed until the file exists.
 
-2. **User agent** — check `profile.yaml` for `linkedin.user_agent`. If missing, prompt the user to paste their browser's user agent string (find it at `whatismybrowser.com`) and save it to `profile.yaml` under `linkedin.user_agent`. This is a one-time setup.
+2. **User agent** — check `profile.yaml` for `linkedin.user_agent`. If missing or empty, prompt the user to paste their browser's user agent string (find it at `whatismybrowser.com`) and save it to `profile.yaml` under `linkedin.user_agent` using `save_yaml()` from `src/utils.py`. This is a one-time setup.
 
 **Search URL construction:**
-Navigate to LinkedIn Jobs while logged in and construct a search URL with:
-- Keyword: target role title from profile.yaml
-- Location: from `profile.yaml` location field (geoId for Singapore: `102454443`)
-- Job type: Full-time (`f_JT=F`)
+Construct a LinkedIn Jobs search URL programmatically (do NOT open a browser):
+- Base: `https://www.linkedin.com/jobs/search/?`
+- `keywords=` — URL-encoded target role title from profile.yaml
+- `location=` — URL-encoded location from profile.yaml
+- `f_JT=F` — Full-time filter
 
-Copy the full URL from the address bar — this is the `searchUrl` actor input.
+Example: `https://www.linkedin.com/jobs/search/?keywords=Product%20Manager&location=Singapore&f_JT=F`
+
+If the user has a preferred LinkedIn geoId for their location, they can add it to `profile.yaml` under `linkedin.geo_id` and the URL should use `geoId=` instead of `location=`.
 
 **Actor:** `curious_coder/linkedin-jobs-search-scraper`
 
@@ -131,9 +134,9 @@ For each new listing found (not already in pipeline), score it using the profile
 **skills_fit** (0-10): role match, skills alignment, location fit, deal-breakers
 **preference_fit** (0-10): company type, AI seriousness, role scope, autonomy signals
 
-Add all scored results to `data/processed_listings.yaml`.
+Add all scored results to `data/processed_listings.yaml` using `save_yaml()` from `src/utils.py`.
 
-For listings scoring above `scoring.threshold_for_coaching`, add an entry to `coaching_state.md` Interview Loops.
+For listings where both skills_fit ≥ `scoring.threshold_for_coaching.skills_fit_min` AND preference_fit ≥ `scoring.threshold_for_coaching.preference_fit_min`, add an entry to `coaching_state.md` Interview Loops using `update_section()` from `src/file_writer.py`.
 
 ---
 

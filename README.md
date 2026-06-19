@@ -325,21 +325,6 @@ All your job search data lives in files, not in the conversation. Clearing conte
 
 ---
 
-## Setting Up Job Search (Indeed MCP)
-
-`/find-jobs` uses the **Indeed MCP** as its primary job source. To enable it, add the Indeed MCP to your Claude Code configuration:
-
-1. In the Claude Code terminal, run:
-   ```
-   claude mcp add @anthropic-ai/mcp-server-indeed
-   ```
-
-2. Restart Claude Code for the change to take effect.
-
-If the Indeed MCP is not configured, `/find-jobs` will skip Mode 1 and fall back to career page searches (Mode 2) and any companies you specify manually. All other skills work without it.
-
----
-
 ## Optional: Enhanced Job Search Integrations
 
 These integrations extend the search stack beyond the default Indeed MCP + trafilatura. All are opt-in — the toolkit works without them.
@@ -356,9 +341,9 @@ By default, `/find-jobs` Mode 2 (career pages) uses trafilatura to fetch page co
 
 Once configured, Mode 2 will automatically use Firecrawl for career pages and fall back to trafilatura for any pages it can't handle.
 
-### Apify — LinkedIn and Glassdoor Job Search
+### Apify — LinkedIn Job Search
 
-Apify provides access to job listings from LinkedIn and Glassdoor via proxy-backed actors. This unlocks `/find-jobs --apify` (Mode 5), which searches those platforms without browser automation.
+Apify provides authenticated access to LinkedIn job listings via proxy-backed actors. This unlocks `/find-jobs --apify` (Mode 5), which searches LinkedIn without browser automation and returns skills data, applicant insights, and recruiter details unavailable from public scraping.
 
 **Setup:**
 1. Create an account at [apify.com](https://apify.com) — free tier available

@@ -27,7 +27,7 @@ You have [N] listing(s) ready for tailoring:
 Which would you like to prepare? (Reply with number or company name)
 ```
 
-If the user wants to tailor a listing below threshold, confirm: "This listing scored [X]/10 on skills fit — below your preparation threshold of [T]. Want to prepare it anyway?"
+If the user wants to tailor a listing below threshold (either skills_fit below `scoring.threshold_for_preparation.skills_fit_min` OR preference_fit below `scoring.threshold_for_preparation.preference_fit_min`), confirm: "This listing scored [X]/10 skills fit and [Y]/10 preference fit — below your preparation threshold (skills ≥ [S], preference ≥ [P]). Want to prepare it anyway?"
 
 ---
 

@@ -66,8 +66,14 @@ company_preferences:
 # Controls when tailored documents and coaching notes are generated.
 # Adjust thresholds if you want more or fewer listings flagged for action.
 scoring:
-  threshold_for_preparation: 7   # skills_fit >= this to generate tailored resume + cover letter
-  threshold_for_coaching: 7      # skills_fit >= this to add entry to coaching_state.md
+  # Dual-axis thresholds: BOTH skills_fit AND preference_fit must be met.
+  # Use a single int (applies to both axes) or a dict with skills_fit_min + preference_fit_min.
+  threshold_for_preparation:     # to generate tailored resume + cover letter
+    skills_fit_min: 6
+    preference_fit_min: 7
+  threshold_for_coaching:        # to add entry to coaching_state.md
+    skills_fit_min: 6
+    preference_fit_min: 7
   glassdoor_enrich_limit: 5      # Max listings to enrich with Glassdoor data per search run
 
   dimensions:
@@ -107,5 +113,6 @@ search:
 
 # ── LinkedIn (optional — only needed for /find-jobs --apify) ──────────────────
 # Set up automatically when you first run /find-jobs --apify.
-linkedin:
-  user_agent: ""   # Your browser's user agent string — set once, used for Apify auth
+# Do NOT pre-fill user_agent — leave this section out entirely until Mode 5 prompts you.
+# linkedin:
+#   user_agent: "Mozilla/5.0 ..."   # Your browser's user agent string
