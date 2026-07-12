@@ -470,7 +470,9 @@ class Preparer:
         else:
             listings = [
                 l for l in data["listings"]
-                if rubric.is_above_prep_threshold(l.get("skills_fit", 0))
+                if rubric.is_above_prep_threshold(
+                    l.get("skills_fit", 0), l.get("preference_fit", 0)
+                )
                 and not l.get("prepared", False)
                 and l.get("status") != "error"
             ]

@@ -173,3 +173,50 @@ class TestLfLineEndings:
         update_section(path, "positioning_focus", "Second.\nMore.")
         raw = path.read_bytes()
         assert b"\r\n" not in raw
+
+
+class TestSectionBoundaryAtHigherLevelHeading:
+    """Regression: an h3 section must stop at a following h2 heading.
+
+    The original lookahead only matched same-level headings, so updating
+    '### Superpower' consumed and deleted the '## Interview Loops' section
+    that follows it in coaching_state.md.
+    """
+
+    def test_h3_update_preserves_following_h2(self, tmp_path):
+        path = tmp_path / "coaching_state.md"
+        path.write_text(
+            "# Coaching State\n\n"
+            "## Storybank\n\n"
+            "### Superpower\nOld superpower text\n\n"
+            "## Interview Loops\n- Acme — Researching\n\n"
+            "## Outcome Log\n[Empty]\n",
+            encoding="utf-8",
+            newline="\n",
+        )
+
+        update_section(path, "superpower", "New superpower text")
+
+        content = path.read_text(encoding="utf-8")
+        assert "New superpower text" in content
+        assert "Old superpower text" not in content
+        assert "## Interview Loops" in content
+        assert "- Acme — Researching" in content
+        assert "## Outcome Log" in content
+
+    def test_h3_update_still_stops_at_same_level(self, tmp_path):
+        path = tmp_path / "notes.md"
+        path.write_text(
+            "## Storybank\n\n"
+            "### Career Highlights\nOld highlights\n\n"
+            "### Positioning Statement\nKeep me intact\n",
+            encoding="utf-8",
+            newline="\n",
+        )
+
+        update_section(path, "career_highlights", "New highlights")
+
+        content = path.read_text(encoding="utf-8")
+        assert "New highlights" in content
+        assert "Old highlights" not in content
+        assert "Keep me intact" in content

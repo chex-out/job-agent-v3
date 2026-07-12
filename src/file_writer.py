@@ -147,10 +147,11 @@ def _section_pattern(heading: str) -> re.Pattern:
     """Build a regex that matches a section from its heading to the next same-or-higher heading."""
     level = _get_heading_level(heading)
     escaped = re.escape(heading)
-    # Match from this heading to the next heading of the same or higher level, or end of string
-    stops = "#" * level
+    # Match from this heading to the next heading of the same or HIGHER level, or end
+    # of string. 1 to `level` #'s followed by a non-# stops the section — e.g. for an
+    # h3 section, a following "## " (h2) must end it, not be swallowed into it.
     return re.compile(
-        rf"({escaped}\n)(.*?)(?=\n{stops}[^#]|\Z)",
+        rf"({escaped}\n)(.*?)(?=\n#{{1,{level}}}[^#]|\Z)",
         re.DOTALL,
     )
 

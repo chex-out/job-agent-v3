@@ -110,15 +110,13 @@ Once Claude Code is running in your terminal, type:
 
 Follow the conversation — Claude will ask you questions and build your profile automatically. Takes about 10 minutes.
 
-### Step 8 — Enable Job Search (Indeed MCP)
+### Step 8 — Enable Job Search (Indeed Connector)
 
-In the Claude Code terminal, run:
+`/find-jobs` uses Claude's official Indeed connector as its primary job source:
 
-```
-claude mcp add @anthropic-ai/mcp-server-indeed
-```
-
-Then restart Claude Code (`exit`, then run `claude` again). This enables `/find-jobs` to search Indeed automatically.
+1. Go to [claude.com/connectors/indeed](https://claude.com/connectors/indeed) in your browser
+2. Click **Add connector** and sign in with the same Claude account you use for Claude Code
+3. Restart Claude Code (`exit`, then run `claude` again)
 
 If you skip this step, `/find-jobs` will only search company career pages for companies you name manually — no automated Indeed results.
 
@@ -188,13 +186,13 @@ A browser window will open to authenticate.
 
 Claude will walk you through profile creation. Takes about 10 minutes.
 
-### Step 8 — Enable Job Search (Indeed MCP)
+### Step 8 — Enable Job Search (Indeed Connector)
 
-```bash
-claude mcp add @anthropic-ai/mcp-server-indeed
-```
+`/find-jobs` uses Claude's official Indeed connector as its primary job source:
 
-Then restart Claude Code (`exit`, then run `claude` again). This enables `/find-jobs` to search Indeed automatically.
+1. Go to [claude.com/connectors/indeed](https://claude.com/connectors/indeed) in your browser
+2. Click **Add connector** and sign in with the same Claude account you use for Claude Code
+3. Restart Claude Code (`exit`, then run `claude` again)
 
 If you skip this step, `/find-jobs` will only search company career pages for companies you name manually — no automated Indeed results.
 
@@ -264,13 +262,13 @@ claude
 /setup
 ```
 
-### Step 8 — Enable Job Search (Indeed MCP)
+### Step 8 — Enable Job Search (Indeed Connector)
 
-```bash
-claude mcp add @anthropic-ai/mcp-server-indeed
-```
+`/find-jobs` uses Claude's official Indeed connector as its primary job source:
 
-Then restart Claude Code (`exit`, then run `claude` again). This enables `/find-jobs` to search Indeed automatically.
+1. Go to [claude.com/connectors/indeed](https://claude.com/connectors/indeed) in your browser
+2. Click **Add connector** and sign in with the same Claude account you use for Claude Code
+3. Restart Claude Code (`exit`, then run `claude` again)
 
 If you skip this step, `/find-jobs` will only search company career pages for companies you name manually — no automated Indeed results.
 
@@ -347,7 +345,7 @@ All your job search data lives in files, not in the conversation. Clearing conte
 
 ## Optional: Enhanced Job Search Integrations
 
-These integrations extend the search stack beyond the default Indeed MCP + trafilatura. All are opt-in — the toolkit works without them.
+These integrations extend the search stack beyond the default Indeed connector + trafilatura. All are opt-in — the toolkit works without them.
 
 ### Firecrawl — Better Career Page Scraping
 
@@ -408,7 +406,7 @@ Nothing is sent anywhere except to the Anthropic API to power Claude's responses
 
 **Python command not found** → Make sure Python is installed and added to PATH. On macOS/Linux, try `python3` instead of `python`.
 
-**`/find-jobs` returns no results** → Check that the Indeed MCP is configured (see "Setting Up Job Search" above). If it is, try running with specific company names: `/find-jobs Stripe, Linear, Anthropic`.
+**`/find-jobs` returns no results** → Check that the Indeed connector is enabled (see Step 8 in your OS setup section above). If it is, try running with specific company names: `/find-jobs Stripe, Linear, Anthropic`.
 
 **Anti-fabrication keeps flagging something that's true** → Confirm it by typing "confirm" when prompted. The validator errs on the side of caution — you're the final check.
 
