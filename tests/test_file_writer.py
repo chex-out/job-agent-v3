@@ -141,7 +141,7 @@ class TestReadSection:
 class TestSectionIsPopulated:
     def test_populated_returns_true(self, tmp_path):
         path = tmp_path / "notes.md"
-        update_section(path, "career_highlights", "- Led Horizon campaign")
+        update_section(path, "career_highlights", "- Led Horizon launch campaign")
         assert section_is_populated(path, "career_highlights") is True
 
     def test_whitespace_only_returns_false(self, tmp_path):

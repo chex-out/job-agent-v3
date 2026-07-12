@@ -136,8 +136,8 @@ class TestPreservesOtherSections:
 
         updated = bridge_path.read_text(encoding="utf-8")
         assert "S001" in updated
-        assert "The Horizon Campaign" in updated
-        assert "Marketo Implementation" in updated
+        assert "The Horizon Launch Campaign" in updated
+        assert "Automation Platform Migration" in updated
 
     def test_profile_preserved(self, bridge, bridge_path):
         bridge.write_research_entry("NewCo", "strong", "Test")
@@ -145,7 +145,7 @@ class TestPreservesOtherSections:
 
         updated = bridge_path.read_text(encoding="utf-8")
         assert "Maya Rodriguez" in updated
-        assert "Digital Marketing Manager" in updated
+        assert "Growth Marketing Manager" in updated
 
 
 class TestDefaultStatePath:

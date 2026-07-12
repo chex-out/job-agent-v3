@@ -66,7 +66,7 @@ Return the tailored documents in this exact format:
 [Tailoring notes in this exact format:
 
 ## What Changed
-- [3-5 specific changes made to the resume — name the change, e.g. "Moved Marketo certification to top of skills to match requirement" not just "resume was tailored"]
+- [3-5 specific changes made to the resume — name the change, e.g. "Moved analytics certification to top of skills to match requirement" not just "resume was tailored"]
 
 ## Cover Letter Focus
 [1-2 sentences: what angle/story was emphasised and why it fits this role]
