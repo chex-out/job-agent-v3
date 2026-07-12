@@ -41,6 +41,7 @@ Three files users never edit directly:
 ### Suite A — Setup & Session Management
 | Skill | Purpose |
 |---|---|
+| `/try-it` | Zero-setup taster — paste resume + one job, get a scored match report; nothing saved |
 | `/setup` | 6-step onboarding wizard — creates profile, initializes coaching state |
 | `/build-storybank` | 10-min session to build career highlights, positioning, skills evidence |
 | `/job-search-session` | Start a focused job search session — reads pipeline state, tells you where you left off |
@@ -84,10 +85,12 @@ Three files users never edit directly:
    **If the profile is missing or empty (first-time user):** Respond to the user's first message — whatever it is — with:
    > "Welcome to the Job Seeker AI Toolkit.
    >
-   > To get started, type `/setup` — it takes about 10 minutes and builds your profile. Once that's done, everything else happens through conversation. No YAML editing, no coding required.
+   > Two ways to start:
+   > - **`/try-it`** — 2 minutes. Paste your resume and one job listing, get a scored match report. Nothing is saved.
+   > - **`/setup`** — about 10 minutes. Builds your full profile and unlocks everything: job pipeline, tailored documents, interview coaching.
    >
-   > When you're ready: `/setup`"
-   Do not attempt any other task until `/setup` has been run.
+   > Most people start with `/try-it`."
+   Do not attempt any other task until `/setup` has been run — **with one exception: `/try-it` runs without a profile by design and is always allowed.**
 
    **If the profile exists:** Continue normally — proceed to check for session notes (rule 2) and respond to whatever the user asked.
 

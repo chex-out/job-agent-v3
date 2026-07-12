@@ -25,6 +25,23 @@ Before you start, you need:
 
 ---
 
+## Try It in 2 Minutes (before committing to full setup)
+
+You don't need the full setup to see what this does. The taster needs only Claude Code and the cloned repo — no Python install, no API key file:
+
+1. Clone the repo and open it:
+   ```
+   git clone https://github.com/chex-out/job-agent-v3.git
+   cd job-agent-v3
+   claude
+   ```
+2. Type `/try-it`
+3. Paste your resume and one job listing you're eyeing
+
+You'll get a scored match report — strengths, honest gaps, a legitimacy check on the posting, and a sample tailored pitch. **Nothing is saved.** If you like what you see, the full setup below takes about 10 minutes and unlocks the job pipeline, tailored documents, and interview coaching.
+
+---
+
 ## Setup: Windows
 
 ### Step 1 — Check Python
@@ -264,6 +281,7 @@ Once set up, everything happens through conversation in Claude Code.
 ### Getting Started
 | Command | What it does |
 |---|---|
+| `/try-it` | Zero-setup taster — paste your resume + one job, get a scored match report (nothing saved) |
 | `/setup` | First-time profile creation (run once) |
 | `/build-storybank` | Build your career story database (unlocks LinkedIn optimizer) |
 | `/job-search-session` | Start a focused job search session — shows pipeline status and where you left off |
