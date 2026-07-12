@@ -283,7 +283,7 @@ Once set up, everything happens through conversation in Claude Code.
 |---|---|
 | `/try-it` | Zero-setup taster — paste your resume + one job, get a scored match report (nothing saved) |
 | `/setup` | First-time profile creation (run once) |
-| `/build-storybank` | Build your career story database (unlocks LinkedIn optimizer) |
+| `/build-storybank` | Build your career story database (source material for content and coaching) |
 | `/job-search-session` | Start a focused job search session — shows pipeline status and where you left off |
 | `/coaching-session` | Start a focused coaching session — shows storybank status and active interviews |
 
@@ -336,7 +336,7 @@ Claude Code has a context window limit. For long job search sessions:
 
 1. When the session feels long (or Claude suggests it), run `/compact`
 2. `/compact` saves everything to `data/session_notes/` — nothing is lost
-3. Press `Ctrl+L` to clear context
+3. Type `/clear` to clear context
 4. Next session, start fresh with `/job-search-session` or `/coaching-session` — they'll recap where you left off automatically
 
 All your job search data lives in files, not in the conversation. Clearing context only loses the chat thread.
@@ -416,7 +416,7 @@ Everything in the right two columns is opt-in. If you never add those keys, noth
 
 **Hook warning about profile.yaml** → Run `/setup` to check and repair your profile. This usually happens if a file write was interrupted.
 
-**Context getting long** → Run `/compact` then `Ctrl+L`. Your progress is preserved.
+**Context getting long** → Run `/compact` then `/clear`. Your progress is preserved.
 
 **Python command not found** → Make sure Python is installed and added to PATH. On macOS/Linux, try `python3` instead of `python`.
 
@@ -424,7 +424,7 @@ Everything in the right two columns is opt-in. If you never add those keys, noth
 
 **Anti-fabrication keeps flagging something that's true** → Confirm it by typing "confirm" when prompted. The validator errs on the side of caution — you're the final check.
 
-**`/setup --migrate` prompt** → Your profile was created with an older version of the toolkit. Run `/setup --migrate` to update it, or `/reset` and `/setup` to start fresh.
+**Profile version warning** → Your profile was created with an older version of the toolkit. Run `/reset` (your resume and cover letter are preserved) and then `/setup` to rebuild it in the current format.
 
 ---
 
@@ -437,10 +437,10 @@ No. Everything happens through conversation in Claude Code. The Python files run
 Your profile, resume, cover letters, and job search history all stay on your computer by default. The Anthropic API powers Claude's responses; optional integrations (Indeed, Firecrawl, Apify, Resend, Gmail) each send specific data only if you enable them — see the Privacy section above for exactly what goes where. For Anthropic's data handling and retention, see [Anthropic's privacy policy](https://www.anthropic.com/privacy).
 
 **How much does it cost?**
-You pay for Anthropic API usage. A typical `/setup` session costs about $0.10–0.20. A `/tailor-docs` run with anti-fabrication validation costs about $0.20–0.40. Coaching sessions vary with length.
+It depends on your Claude plan. On a Claude subscription (Pro/Max), skill sessions count against your plan's usage like any other Claude Code conversation — no separate bill. On API-key billing, costs scale with session length; scoring a job or tailoring documents are typically cents rather than dollars per run, with coaching sessions varying by length.
 
 **Can I use it for multiple job searches over time?**
-Yes. Your profile and storybank persist across sessions. Use `/compact` at the end of each session to save a handoff note, then `Ctrl+L` to clear context and start fresh. Run `/reset` only if you want to wipe everything and start over.
+Yes. Your profile and storybank persist across sessions. Use `/compact` at the end of each session to save a handoff note, then `/clear` to clear context and start fresh. Run `/reset` only if you want to wipe everything and start over.
 
 **What if I want to apply to a job that /score-job rates poorly?**
 You can still run `/tailor-docs` on any listing in your pipeline. The threshold is a recommendation, not a lock.

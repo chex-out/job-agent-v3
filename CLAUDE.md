@@ -46,7 +46,7 @@ Three files users never edit directly:
 | `/build-storybank` | 10-min session to build career highlights, positioning, skills evidence |
 | `/job-search-session` | Start a focused job search session — reads pipeline state, tells you where you left off |
 | `/coaching-session` | Start a focused coaching session — reads storybank + interview loops, tells you where you left off |
-| `/compact` | Writes structured handoff note before clearing context with Ctrl+L |
+| `/compact` | Writes structured handoff note before clearing context with /clear |
 | `/reset` | Wipes all state cleanly with confirmation — preserves resume + cover letter |
 
 ### Suite B — Job Discovery & Pipeline
@@ -71,8 +71,8 @@ Three files users never edit directly:
 |---|---|
 | `/content-session` | Draft, edit, and manage content across platforms (LinkedIn, Substack, blog, newsletter, X) — persistent voice guide, platform-specific guidance, storybank as source material |
 
-### v1.1 Backlog
-`/coach-debrief`, `/coach-concerns`, `/analyze-offer`, `/linkedin-optimizer`, `/rejection-analysis`, `/outreach-draft`, `/career-gaps`
+### Backlog (see BACKLOG.md for specs)
+v1.1: `/coach-debrief`, `/coach-concerns`, `/analyze-offer`, `/rejection-analysis`, `/outreach-draft` · v1.2: `/linkedin-optimizer`, `/career-gaps`
 
 ---
 
@@ -96,7 +96,7 @@ Three files users never edit directly:
 
 2. **At the start of every session** (returning users), check if `data/session_notes/` contains any `.md` files. If recent notes exist (within 7 days), proactively say: *"I found notes from your last session on [date]. Want me to recap where you left off?"* — then read the file and summarize if they say yes.
 
-3. **Proactively suggest `/compact`** when a session is getting long (many file writes, long conversation, approaching context limits). Say: *"This session is getting long — want to run `/compact` before we continue? It saves your progress so you can safely clear context with Ctrl+L."*
+3. **Proactively suggest `/compact`** when a session is getting long (many file writes, long conversation, approaching context limits). Say: *"This session is getting long — want to run `/compact` before we continue? It saves your progress so you can safely clear context with /clear."*
 
 4. **After completing significant work** (scoring jobs, tailoring docs, coaching session), suggest the next logical skill. Never leave the user without a clear next step.
 

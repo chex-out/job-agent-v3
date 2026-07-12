@@ -332,4 +332,4 @@ Status: draft | planned
 End sessions with:
 > "✓ Everything saved. Your pipeline and voice guide are up to date.
 >
-> When this session gets long, run `/compact` before clearing with Ctrl+L."
+> When this session gets long, run `/compact` before clearing with `/clear`."

@@ -93,4 +93,4 @@ Pick **one** based on current state (priority order):
 
 Embed this note at the bottom of your opening message, in a smaller note format:
 
-> *When this session gets long, run `/compact` to save your progress, then `Ctrl+L` to clear context. Your pipeline and scores are always preserved in files.*
+> *When this session gets long, run `/compact` to save your progress, then `/clear` to clear context. Your pipeline and scores are always preserved in files.*

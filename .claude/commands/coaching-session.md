@@ -105,4 +105,4 @@ Pick **one** based on current state (priority order):
 
 Embed this note at the bottom of your opening message:
 
-> *When this session gets long, run `/compact` to save your progress, then `Ctrl+L` to clear context. Your storybank and coaching notes are always preserved in `coaching_state.md`.*
+> *When this session gets long, run `/compact` to save your progress, then `/clear` to clear context. Your storybank and coaching notes are always preserved in `coaching_state.md`.*

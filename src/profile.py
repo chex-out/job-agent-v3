@@ -67,11 +67,24 @@ def load_profile(config_dir: str | Path) -> tuple[UserProfile, ScoringRubric]:
     schema_version = data.get("schema_version", "1.0")
     if schema_version != CURRENT_SCHEMA_VERSION:
         major_current = int(CURRENT_SCHEMA_VERSION.split(".")[0])
-        major_found = int(str(schema_version).split(".")[0])
+        try:
+            major_found = int(str(schema_version).split(".")[0])
+        except ValueError:
+            raise ProfileError(
+                f"Your profile has an unrecognized version marker ({schema_version!r}). "
+                "Run /reset and then /setup to rebuild it."
+            )
         if major_found < major_current:
             raise ProfileError(
                 f"Your profile was created with an older version (v{schema_version}). "
-                "Run /setup --migrate to update it to the current format."
+                "Run /reset (your resume and cover letter are preserved) and then "
+                "/setup to rebuild it in the current format."
+            )
+        if major_found > major_current:
+            raise ProfileError(
+                f"Your profile was created with a NEWER version of the toolkit "
+                f"(v{schema_version}) than this copy supports. Update the toolkit "
+                "(git pull) before using this profile."
             )
 
     # Required field check

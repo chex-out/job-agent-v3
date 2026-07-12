@@ -1,6 +1,6 @@
 # /compact — Save Session Before Clearing Context
 
-This skill creates a structured handoff note before you clear context with Ctrl+L. It reads your current job search state from files — nothing is lost when you clear, because everything important lives in files, not in conversation memory.
+This skill creates a structured handoff note before you clear context with `/clear`. It reads your current job search state from files — nothing is lost when you clear, because everything important lives in files, not in conversation memory.
 
 Run this whenever a session is getting long, or when Claude suggests it.
 
@@ -84,7 +84,7 @@ After writing the file, say:
 > **'Read my last session note'**
 > and I'll recap exactly where you left off.
 >
-> Press **Ctrl+L** to clear context now."
+> Type **/clear** to clear context now."
 
 ---
 
