@@ -174,3 +174,24 @@ class TestValidateProfileFile:
         _write_profile(tmp_path, data)
         issues = validate_profile_file(tmp_path / "profile.yaml")
         assert any("name" in issue for issue in issues)
+
+
+class TestThresholdWrongTypes:
+    """Wrong-type threshold values silently fall back to defaults — pin that
+    behavior so a future change to it is deliberate, not accidental."""
+
+    def test_string_threshold_falls_back_to_defaults(self, tmp_path):
+        data = _minimal_profile()
+        data["scoring"] = {"threshold_for_preparation": "high"}
+        _write_profile(tmp_path, data)
+        _, rubric = load_profile(tmp_path)
+        assert rubric.threshold_for_preparation.skills_fit_min == 6
+        assert rubric.threshold_for_preparation.preference_fit_min == 7
+
+    def test_list_threshold_falls_back_to_defaults(self, tmp_path):
+        data = _minimal_profile()
+        data["scoring"] = {"threshold_for_coaching": [6, 7]}
+        _write_profile(tmp_path, data)
+        _, rubric = load_profile(tmp_path)
+        assert rubric.threshold_for_coaching.skills_fit_min == 6
+        assert rubric.threshold_for_coaching.preference_fit_min == 7

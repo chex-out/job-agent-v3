@@ -137,3 +137,20 @@ class TestRenderDigestHtml:
         stats = {"total": 0, "top_count": 0, "watch_count": 0, "pass_count": 0}
         html = digest.render_html(tiers, stats)
         assert "Job Search Digest" in html
+
+
+class TestCorruptPipelineProtection:
+    """H2 integration: a corrupt pipeline file must raise, never be treated as
+    empty — mark_digested would otherwise overwrite it with nearly nothing."""
+
+    def test_load_undigested_raises_on_corrupt_yaml(self, tmp_path):
+        from src.utils import CorruptYamlError
+
+        data_dir = tmp_path / "data"
+        data_dir.mkdir()
+        (data_dir / "processed_listings.yaml").write_text(
+            "{{{bad yaml: [unterminated", encoding="utf-8"
+        )
+        d = Digest(data_dir=data_dir)
+        with pytest.raises(CorruptYamlError):
+            d.load_undigested_listings()
