@@ -1,9 +1,7 @@
 name: Weekly Job Digest
 
 on:
-  schedule:
-    
-  workflow_dispatch: {}   # manual trigger
+  workflow_dispatch: {}   # manual trigger only — add a schedule block to automate
 
 permissions:
   contents: write
@@ -12,6 +10,18 @@ jobs:
   digest:
     runs-on: ubuntu-latest
     steps:
+      # This workflow commits personal job-search data (coaching_state.md and
+      # pipeline YAMLs) back to the repo. On a public repo that publishes your
+      # career data to everyone. Refuse unless the repo is private or the user
+      # has explicitly opted in via a repository variable.
+      - name: Refuse to commit personal data to a public repo
+        if: ${{ !github.event.repository.private && vars.ALLOW_PUBLIC_DATA_COMMIT != 'true' }}
+        run: |
+          echo "::error::This workflow commits your personal job-search data (coaching_state.md, data/*.yaml) to the repository."
+          echo "::error::This repository is PUBLIC, so that data would be visible to everyone."
+          echo "::error::Fix: make this repository private (Settings -> General -> Danger Zone), or set the repository variable ALLOW_PUBLIC_DATA_COMMIT=true if you truly want this."
+          exit 1
+
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5

@@ -69,6 +69,19 @@ Apify provides authenticated LinkedIn job search via proxy-backed actors — wit
 
 If `APIFY_TOKEN` is not set, respond: *"Apify search requires an API token. Add `APIFY_TOKEN=your_token` to your `.env` file. You can get one at apify.com."* — then stop.
 
+**Cookie consent (required before any setup or run):**
+
+Before the first Mode 5 run in a session, display this and require explicit confirmation:
+> "Before we set this up, understand what LinkedIn session cookies are:
+> - They grant **complete access to your LinkedIn account** — anyone holding them can act as you
+> - They will be stored in **plain text** at `config/linkedin_cookies.json` on this machine (gitignored, never committed)
+> - Each search sends them to an **Apify cloud actor written by a third-party developer** (`curious_coder`), not by Apify or Anthropic
+> - To revoke them at any time: log out of LinkedIn in the browser you exported from, or change your LinkedIn password — both invalidate the exported cookies
+>
+> Comfortable proceeding?"
+
+Do not proceed without a clear yes.
+
 **Authentication setup (one-time):**
 
 1. **LinkedIn cookies** — required. Check for `config/linkedin_cookies.json`. If missing, prompt:

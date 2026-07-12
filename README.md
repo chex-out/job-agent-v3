@@ -375,22 +375,36 @@ Apify provides authenticated access to LinkedIn job listings via proxy-backed ac
 
 ## Optional: Automated Job Digests
 
-You can set up GitHub Actions to run daily job searches and email you a digest. This is entirely optional — the toolkit works great without it.
+You can set up GitHub Actions to run job searches and email you a digest. This is entirely optional — the toolkit works great without it.
 
-See `.github/workflows/job_digest.yml` for setup instructions. Requires:
-- A [Resend](https://resend.com) account (free tier: 100 emails/day)
-- `RESEND_API_KEY`, `DIGEST_FROM_EMAIL`, and `DIGEST_TO_EMAIL` in your `.env`
+The workflows in `.github/workflows/` run manually (Actions tab → Run workflow); add a `schedule:` block if you want them automated. They require these **GitHub Actions secrets** (repo Settings → Secrets and variables → Actions — not your local `.env`):
+- `ANTHROPIC_API_KEY` — for scoring and document preparation
+- `GMAIL_ADDRESS` + `GMAIL_APP_PASSWORD` — for ingesting job URLs from email
+- `RESEND_API_KEY`, `DIGEST_FROM_EMAIL`, `DIGEST_TO_EMAIL` — [Resend](https://resend.com) account for sending the digest (free tier: 100 emails/day)
+
+> ⚠️ **The digest workflows commit your job-search data (pipeline files, coaching state) back to this repository.** If your copy of this repo is public, that data becomes public. The workflows refuse to run on public repos by default — make your copy private before enabling them.
 
 ---
 
 ## Privacy
 
-Your data stays local. The toolkit writes everything to files in this repo directory:
-- `config/profile.yaml` — your profile (gitignored)
-- `coaching_state.md` — your coaching history (gitignored)
-- `data/` — job listings and prepared documents (gitignored)
+Your data stays local by default. The toolkit writes everything to files in this repo directory, all gitignored:
+- `config/` — your profile, resume, cover letter, and any integration credentials
+- `coaching_state.md` — your coaching history
+- `data/` — job listings, prepared documents, session notes
 
-Nothing is sent anywhere except to the Anthropic API to power Claude's responses.
+**What leaves your machine, and when:**
+
+| Service | What is sent | When |
+|---|---|---|
+| Anthropic API | Your prompts, profile, resume, and job listings — to power Claude's responses | Always (this is how the toolkit works) |
+| Indeed connector | Your search queries | If you enable it (Step 8) |
+| Firecrawl | URLs of career pages you scan | Only if you add a `FIRECRAWL_API_KEY` |
+| Apify | LinkedIn search queries + your LinkedIn session cookies | Only if you run `/find-jobs --apify` |
+| Resend | Your scored job list, emailed to you | Only if you enable the digest workflow |
+| Gmail (IMAP) | Read access to your inbox via app password | Only if you enable email ingestion |
+
+Everything in the right two columns is opt-in. If you never add those keys, nothing beyond the Anthropic API is contacted. For how Anthropic handles API data, see [Anthropic's privacy policy](https://www.anthropic.com/privacy).
 
 ---
 
@@ -420,7 +434,7 @@ Nothing is sent anywhere except to the Anthropic API to power Claude's responses
 No. Everything happens through conversation in Claude Code. The Python files run automatically in the background — you never need to open or edit them.
 
 **Is my data private?**
-Yes. Your profile, resume, cover letters, and job search history all stay on your computer. The only external service used is the Anthropic API (to power Claude's responses). Nothing is stored on Anthropic's servers long-term — see [Anthropic's privacy policy](https://www.anthropic.com/privacy).
+Your profile, resume, cover letters, and job search history all stay on your computer by default. The Anthropic API powers Claude's responses; optional integrations (Indeed, Firecrawl, Apify, Resend, Gmail) each send specific data only if you enable them — see the Privacy section above for exactly what goes where. For Anthropic's data handling and retention, see [Anthropic's privacy policy](https://www.anthropic.com/privacy).
 
 **How much does it cost?**
 You pay for Anthropic API usage. A typical `/setup` session costs about $0.10–0.20. A `/tailor-docs` run with anti-fabrication validation costs about $0.20–0.40. Coaching sessions vary with length.

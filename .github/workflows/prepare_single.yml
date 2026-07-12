@@ -22,6 +22,16 @@ jobs:
   prepare:
     runs-on: ubuntu-latest
     steps:
+      # This workflow commits personal job-search data back to the repo.
+      # Refuse on public repos unless explicitly overridden — see job_digest.yml.
+      - name: Refuse to commit personal data to a public repo
+        if: ${{ !github.event.repository.private && vars.ALLOW_PUBLIC_DATA_COMMIT != 'true' }}
+        run: |
+          echo "::error::This workflow commits your personal job-search data (prepared documents, data/*.yaml) to the repository."
+          echo "::error::This repository is PUBLIC, so that data would be visible to everyone."
+          echo "::error::Fix: make this repository private, or set the repository variable ALLOW_PUBLIC_DATA_COMMIT=true if you truly want this."
+          exit 1
+
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
