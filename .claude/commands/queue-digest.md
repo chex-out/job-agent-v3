@@ -12,7 +12,13 @@ Check that `data/processed_listings.yaml` exists. If not or if empty: "Your pipe
 
 ## Reading the Pipeline
 
-Read `data/processed_listings.yaml`. Group listings by status:
+**Never read `data/processed_listings.yaml` in full** — it grows large in active use (CLAUDE.md rule 14). Load the pipeline with targeted access:
+
+1. `Grep` for `status:` with line numbers to get counts per status
+2. `Grep` for `company_name:`, `role_title:`, `skills_fit:`, `preference_fit:` with line numbers
+3. Use `Read` with `offset`/`limit` only for the specific listing blocks you need to display (active + in-progress rows)
+
+Group listings by status:
 
 | Status | Meaning |
 |--------|---------|
@@ -60,7 +66,7 @@ Also read `coaching_state.md` Interview Loops section to cross-reference active 
 - Offers: [N]
 ```
 
-For listings in "Scored" status that are above `scoring.threshold_for_preparation` in `profile.yaml`, show "→ Ready for /tailor-docs" in the Next Step column.
+For listings in "Scored" status where skills_fit >= `scoring.threshold_for_preparation.skills_fit_min` AND preference_fit >= `scoring.threshold_for_preparation.preference_fit_min`, show "→ Ready for /tailor-docs" in the Next Step column.
 
 If the pipeline is empty in a section, omit that section header.
 
@@ -69,7 +75,7 @@ If the pipeline is empty in a section, omit that section header.
 ## Closing
 
 After the digest, suggest the next action:
-- If there are scored listings above threshold with no docs: `→ Run /tailor-docs to prepare documents for [company].`
+- If there are scored listings above both threshold axes with no docs: `→ Run /tailor-docs to prepare documents for [company].`
 - If there are prepared listings not yet applied: `→ Documents are ready for [company] — apply when you're ready, then run /track-application to update your status.`
 - If pipeline looks thin: `→ Run /find-jobs to find new roles.`
 - If there are active interviews: `→ Run /coach-prep [company] to prepare for your interview.`

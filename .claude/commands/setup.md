@@ -174,7 +174,7 @@ Then say:
 > - `/find-jobs` — Search for roles matching your profile
 > - `/score-job [URL]` — Score a specific job listing
 >
-> You can also unlock AI-powered LinkedIn rewrites and networking drafts whenever you're ready — run `/build-storybank` (about 10 minutes) to build your career story database."
+> You can also unlock content writing (`/content-session`) and richer interview coaching whenever you're ready — run `/build-storybank` (about 10 minutes) to build your career story database."
 
 ---
 

@@ -31,7 +31,7 @@ Load from `config/profile.yaml`:
 - `known_concerns` — likely gaps
 - `company_preferences` — minimum_bar, ideal_signals, nice_to_have, deal_breakers
 - `scoring.dimensions` — the rubric for skills_fit and preference_fit
-- `scoring.threshold_for_preparation` — threshold for recommending /tailor-docs
+- `scoring.threshold_for_preparation` — dual-axis threshold (`skills_fit_min` + `preference_fit_min`) for recommending /tailor-docs
 
 Score the listing on two dimensions (0-10 each):
 
@@ -93,11 +93,11 @@ Confidence levels:
 - **Proceed with Caution** — 1-2 signals missing or unclear; note which ones
 - **Suspicious** — unnamed company, generic description, or apply link leads nowhere
 
-If skills_fit is above `scoring.threshold_for_preparation`:
+If skills_fit >= `scoring.threshold_for_preparation.skills_fit_min` AND preference_fit >= `scoring.threshold_for_preparation.preference_fit_min`:
 > → Run `/tailor-docs` to prepare your application documents.
 
-If skills_fit is below threshold:
-> → This listing is below your preparation threshold. You can still apply manually, but it's unlikely to be the best use of your time.
+If either axis is below its threshold:
+> → This listing is below your preparation threshold ([which axis] fell short). You can still apply manually, but it's unlikely to be the best use of your time.
 
 ---
 
@@ -125,7 +125,7 @@ listings:
     digested: false
 ```
 
-Also write to `coaching_state.md` Interview Loops if skills_fit >= `scoring.threshold_for_coaching`:
+Also write to `coaching_state.md` Interview Loops if skills_fit >= `scoring.threshold_for_coaching.skills_fit_min` AND preference_fit >= `scoring.threshold_for_coaching.preference_fit_min` — using `update_section()` from `src/file_writer.py`:
 - Add or update an entry under `## Interview Loops`
 - Status: Researched (via Job Agent)
 - Include scores and key signals

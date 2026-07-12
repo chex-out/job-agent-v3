@@ -139,7 +139,6 @@ Say:
 > "Your storybank is ready. Here's what's now unlocked:
 >
 > - `/content-session` — Start writing content (LinkedIn, Substack, blog) using your storybank as source material
-> - `/profile-optimizer` — Rewrite your LinkedIn profile and bio using your positioning and highlights
-> - `/career-gaps` — Build deployment-ready narratives for career concerns
+> - `/coach-prep [company]` — Prep briefs that map your stories to a specific interview
 >
 > To go deeper (interview prep, practice drills), run `/coach-kickoff` — it builds on your storybank without replacing it."

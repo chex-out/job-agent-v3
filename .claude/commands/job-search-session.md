@@ -20,8 +20,8 @@ Read `config/profile.yaml`. If it doesn't exist or has an empty `name` field:
 Stop here if profile is missing.
 
 **3. Check pipeline:**
-Read `data/processed_listings.yaml`. Count listings by status. Identify:
-- Listings with `status: scored` and `prepared: false` where `skills_fit >= scoring.threshold_for_preparation` — these are **ready for docs**
+**Never read `data/processed_listings.yaml` in full** (CLAUDE.md rule 14) — `Grep` for `status:`, `prepared:`, `skills_fit:`, and `preference_fit:` fields with line numbers to count and classify, then `Read` with `offset`/`limit` only for the few listings you need to name. Identify:
+- Listings with `status: scored` and `prepared: false` where skills_fit >= `scoring.threshold_for_preparation.skills_fit_min` AND preference_fit >= `scoring.threshold_for_preparation.preference_fit_min` — these are **ready for docs**
 - Listings with `status: prepared` and `prepared: true` — **ready to apply**
 - Listings with `status: interviewing` or `status: applied` — **active**
 - Listings with `status: offer` — **offers pending**

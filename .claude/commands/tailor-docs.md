@@ -9,15 +9,15 @@ Generate a tailored resume and cover letter for a specific job listing. Includes
 1. Check `config/profile.yaml` — must have non-empty `name`. If not: run `/setup` first.
 2. Check `config/resume_base.md` — must exist. If not: run `/setup` to add your resume.
 3. Check `config/cover_letter_base.md` — must exist. If not: run `/setup` to add your cover letter.
-4. Check `data/processed_listings.yaml` — must have at least one scored listing.
+4. Check `data/processed_listings.yaml` — must have at least one scored listing. Use `Grep` for `status: scored` (never read the file in full — CLAUDE.md rule 14).
 
 ---
 
 ## Target Listing Selection
 
-If the user specifies a company or URL, find the matching listing in `data/processed_listings.yaml`.
+If the user specifies a company or URL, find the matching listing in `data/processed_listings.yaml` — `Grep` for the company name or URL with line numbers, then `Read` that listing's block with `offset`/`limit`.
 
-If no listing is specified, show listings that are scored and above `scoring.threshold_for_preparation` in `profile.yaml` but not yet prepared:
+If no listing is specified, show listings that are scored but not yet prepared and above the preparation threshold on both axes (skills_fit >= `scoring.threshold_for_preparation.skills_fit_min` AND preference_fit >= `scoring.threshold_for_preparation.preference_fit_min`):
 
 ```
 You have [N] listing(s) ready for tailoring:

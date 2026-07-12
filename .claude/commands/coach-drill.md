@@ -164,10 +164,10 @@ Scores never change based on directness setting — only the framing.
 
 ## Session End — Update coaching_state.md
 
-After the session (not per-round), update coaching_state.md:
-- Append to `## Session Log`
-- If progression ladder stage was reached, note it
-- Add any new patterns observed to `## Coaching Notes` (e.g., "Tends to bury the result — needs to state impact in sentence 1")
+After the session (not per-round), update coaching_state.md using `update_section()` from `src/file_writer.py` (never raw string appends — CLAUDE.md rule 7):
+- Session Log: read the existing entries, add today's row, write the whole section back
+- If progression ladder stage was reached, note it in the Session Log entry
+- Coaching Notes: read existing notes, add any new patterns observed (e.g., "Tends to bury the result — needs to state impact in sentence 1"), write the whole section back
 
 Confirm: `✓ Coaching state updated.`
 

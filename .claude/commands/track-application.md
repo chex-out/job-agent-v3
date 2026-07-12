@@ -21,7 +21,7 @@ The user may say things like:
 - "I got an offer from Linear"
 
 Extract:
-- **Company name** — fuzzy match against `data/processed_listings.yaml` company names
+- **Company name** — `Grep` for `company_name:` lines in `data/processed_listings.yaml` (with line numbers) and fuzzy match against those; never read the file in full (CLAUDE.md rule 14). `Read` the matched listing's block with `offset`/`limit`.
 - **Status keyword** — map to one of: applied, interviewing, rejected, offer, skipped, under_review
 
 If the company name is ambiguous (multiple close matches), show the matches and ask: "Did you mean [A] or [B]?"
@@ -45,9 +45,9 @@ If no listing is found for the company: "I don't have [company] in your pipeline
 
 ## Updating State
 
-1. Update `data/processed_listings.yaml` — set the `status` field for the matching listing
-2. Update `coaching_state.md` Interview Loops — update Status field for the company entry (if it exists)
-3. For rejected/offer outcomes: add a row to the Outcome Log table in `coaching_state.md`
+1. Update `data/processed_listings.yaml` — set the `status` field for the matching listing (targeted edit of that listing's lines only)
+2. Update `coaching_state.md` Interview Loops — update the Status field for the company entry (if it exists) using `update_section()` from `src/file_writer.py`
+3. For rejected/offer outcomes: update the Outcome Log table in `coaching_state.md` via `update_section()` — read the existing table, add the new row, write the whole section back (never raw string appends — CLAUDE.md rule 7)
 
 Confirm each update:
 - `✓ Updated [Company] → [Status]`
@@ -92,6 +92,6 @@ After updating status and showing any cadence alert:
 |-----------|---------------------|
 | applied | "Great! Run `/coach-prep [company]` to start interview preparation in case they reach out." |
 | interviewing | "Run `/coach-prep [company]` to get a tailored prep brief, or `/coach-drill` to practice." |
-| offer | "Congratulations! Run `/analyze-offer` when you're ready to think through the decision." (note: v1.1 skill) |
+| offer | "Congratulations! Want to talk through the decision together before you respond?" |
 | rejected | "Sorry to hear it. Run `/queue-digest` to see what else is in your pipeline." |
 | skipped | "Noted. Run `/find-jobs` if you want to search for more roles." |

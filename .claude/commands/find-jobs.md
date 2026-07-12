@@ -179,7 +179,7 @@ Concerns: [concern if any]
 ...
 ```
 
-Show top matches first (7+/7+), then watchlist (6+), then passed — or omit passed if the list is long.
+Show top matches first (both axes at or above `scoring.threshold_for_preparation`), then watchlist (within 1 point of either axis), then passed — or omit passed if the list is long.
 
 ---
 

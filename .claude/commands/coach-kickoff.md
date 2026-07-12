@@ -143,9 +143,9 @@ After all steps, write to `coaching_state.md` using `src/file_writer.py` `update
 - `known_concerns_bank`: Merge — add new, never remove existing
 - `superpower`: Skip-if-exists — show existing, ask "Is this still your sharpest positioning anchor?"
 
-Append to `## Coaching Notes` in coaching_state.md: key observations from this session (interview history type, emotional state, differentiators noted, coaching mode set).
+Coaching Notes: via `update_section()` — read the existing notes, add key observations from this session (interview history type, emotional state, differentiators noted, coaching mode set), write the whole section back.
 
-Update `## Session Log` with today's entry.
+Session Log: via `update_section()` — read existing entries, add today's row, write the whole section back.
 
 Confirm: `✓ Coaching state updated.`
 
