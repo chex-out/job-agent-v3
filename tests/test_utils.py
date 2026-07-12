@@ -74,13 +74,23 @@ class TestLoadYamlSafety:
         result = load_yaml("/nonexistent/path/file.yaml")
         assert result == {}
 
-    def test_corrupt_yaml_returns_empty_dict(self):
+    def test_corrupt_yaml_raises_and_backs_up(self):
+        """Corrupt YAML must never be silently treated as empty — a later
+        save would permanently overwrite the user's recoverable data."""
+        from src.utils import CorruptYamlError
+
         with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             f.write("{{{bad yaml: [unterminated")
             f.flush()
-            result = load_yaml(f.name)
-            assert result == {}
-        Path(f.name).unlink()
+        try:
+            with pytest.raises(CorruptYamlError):
+                load_yaml(f.name)
+            backup = Path(f.name + ".corrupt")
+            assert backup.exists()
+            assert "bad yaml" in backup.read_text(encoding="utf-8")
+            backup.unlink()
+        finally:
+            Path(f.name).unlink()
 
     def test_valid_yaml_loads_normally(self):
         with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:

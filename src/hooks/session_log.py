@@ -51,11 +51,15 @@ if __name__ == "__main__":
     try:
         main()
     except Exception:
-        repo_root = Path(__file__).resolve().parent.parent.parent
-        error_log = repo_root / "data" / "hook_errors.log"
-        error_log.parent.mkdir(parents=True, exist_ok=True)
-        with open(error_log, "a", encoding="utf-8", newline="\n") as f:
-            f.write(f"[{datetime.now().isoformat()}] session_log hook error:\n")
-            f.write(traceback.format_exc())
-            f.write("\n")
+        # The error-log write must never break the exit-0 guarantee.
+        try:
+            repo_root = Path(__file__).resolve().parent.parent.parent
+            error_log = repo_root / "data" / "hook_errors.log"
+            error_log.parent.mkdir(parents=True, exist_ok=True)
+            with open(error_log, "a", encoding="utf-8", newline="\n") as f:
+                f.write(f"[{datetime.now().isoformat()}] session_log hook error:\n")
+                f.write(traceback.format_exc())
+                f.write("\n")
+        except Exception:
+            pass
     sys.exit(0)

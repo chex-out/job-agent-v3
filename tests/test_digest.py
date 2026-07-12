@@ -30,7 +30,7 @@ def sample_listings():
         },
         {
             "url": "https://b.com", "company_name": "MidCo", "role_title": "Lead",
-            "skills_fit": 7, "preference_fit": 5,
+            "skills_fit": 7, "preference_fit": 6,
             "skills_reasoning": "Decent skills match", "preference_reasoning": "AI-powered but not core",
             "strengths": ["Remote"], "concerns": ["Gap"], "location": "Singapore", "digested": False,
         },
@@ -74,6 +74,18 @@ class TestGroupByTier:
     def test_empty_listings(self):
         tiers = group_by_tier([])
         assert tiers == {"top_fit": [], "watchlist": [], "passed": []}
+
+    def test_custom_rubric_changes_tiering(self):
+        """Tiers must follow the user's configured thresholds, not hardcoded defaults."""
+        from src.models import ScoringRubric, ScoringThreshold
+
+        strict = ScoringRubric(
+            threshold_for_preparation=ScoringThreshold(skills_fit_min=9, preference_fit_min=9)
+        )
+        listings = [{"skills_fit": 8, "preference_fit": 8, "company_name": "A"}]
+        # top_fit under defaults (6/7), but only watchlist under a 9/9 rubric
+        assert group_by_tier(listings)["top_fit"] == listings
+        assert group_by_tier(listings, strict)["watchlist"] == listings
 
 
 class TestLoadUndigestedListings:

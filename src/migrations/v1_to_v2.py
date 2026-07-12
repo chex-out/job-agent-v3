@@ -5,7 +5,10 @@ This file is a scaffold for the first future migration.
 When profile.yaml schema changes from 1.0 to 2.0:
 1. Implement migrate() below
 2. Update CURRENT_SCHEMA_VERSION in src/profile.py to "2.0"
-3. Add the migration to the registry in src/profile.py
+3. Wire the migration into load_profile() in src/profile.py (no registry
+   exists yet — add one there, or call migrate() directly from the
+   version-check branch)
+4. Back up profile.yaml to profile.yaml.bak before writing the migrated dict
 
 Migration contract:
 - migrate() receives the raw dict from profile.yaml

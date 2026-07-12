@@ -9,7 +9,6 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-load_dotenv(Path.cwd() / ".env", override=True)
 
 from src.coach_bridge import CoachBridge
 from src.utils import get_email_body, load_yaml, resolve_company_name, retry_with_backoff, save_yaml, setup_logging
@@ -278,6 +277,8 @@ def apply_status_update(
 
 
 def main():
+    load_dotenv(Path.cwd() / ".env", override=True)
+
     parser = argparse.ArgumentParser(
         description="Feedback: process email replies to update listing statuses"
     )

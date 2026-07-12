@@ -11,8 +11,8 @@ from pathlib import Path
 import anthropic
 from dotenv import load_dotenv
 
-load_dotenv(Path.cwd() / ".env", override=True)
 
+from src.file_writer import update_section
 from src.profile import ProfileError, load_profile
 from src.utils import load_yaml, retry_with_backoff, save_yaml, setup_logging
 
@@ -506,10 +506,14 @@ class Preparer:
                     validation_warning = f"⚠️ Validation check failed to run: {validation['summary']}"
                     logger.warning(validation_warning)
                 elif validation.get("fabricated"):
-                    # Surface to caller — don't auto-save with fabricated claims
+                    # Surgically remove unverifiable claims before anything is saved.
                     logger.warning(
                         f"Found {len(validation['fabricated'])} unverifiable claim(s) "
-                        f"in {company} documents — flagging for review"
+                        f"in {company} documents — applying targeted edit"
+                    )
+                    tailored_resume, tailored_cover_letter = apply_targeted_edit(
+                        client, tailored_resume, tailored_cover_letter,
+                        validation["fabricated"],
                     )
 
                 uncertain_notes = ""
@@ -527,16 +531,18 @@ class Preparer:
                     tailoring_notes, combined_validation,
                 )
 
-                # Save fabrication flags to notes.md for user review
+                # Record what was flagged (and removed) in notes.md for user review
                 if validation.get("fabricated"):
-                    flags_text = "## Fabrication Flags (review before submitting)\n" + "\n".join(
-                        f"- [{c['location']}] {c['claim']} — {c['reason']}"
-                        for c in validation["fabricated"]
+                    flags_body = (
+                        "The following claims could not be verified against the source "
+                        "resume and were removed by a targeted edit. Review the documents "
+                        "before submitting.\n" + "\n".join(
+                            f"- [{c['location']}] {c['claim']} — {c['reason']}"
+                            for c in validation["fabricated"]
+                        )
                     )
-                    notes_path = output_dir / "notes.md"
-                    existing = notes_path.read_text(encoding="utf-8") if notes_path.exists() else ""
-                    notes_path.write_text(
-                        existing + "\n\n" + flags_text, encoding="utf-8", newline="\n"
+                    update_section(
+                        output_dir / "notes.md", "fabrication_flags", flags_body
                     )
 
                 mark_prepared(self.data_dir, listing["url"])
@@ -559,6 +565,8 @@ class Preparer:
 
 
 def main():
+    load_dotenv(Path.cwd() / ".env", override=True)
+
     parser = argparse.ArgumentParser(description="Preparer: tailor resume and cover letter per listing")
     parser.add_argument("--url", help="Prepare a single listing by URL")
     args = parser.parse_args()

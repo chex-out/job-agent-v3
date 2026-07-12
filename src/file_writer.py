@@ -25,10 +25,13 @@ from pathlib import Path
 # Adding a new section? Add it here first.
 SECTION_KEYS = {
     # Tailoring notes (data/prepared/{company}/{role}/notes.md)
-    "positioning_focus": "## Positioning Focus",
-    "what_changed": "## What Changed from Base Resume",
-    "watch_outs": "## Watch Outs",
-    "verify_checklist": "## Verify Before Sending",
+    # Headings must match what tailor-docs.md and preparer.py's TAILORING_PROMPT emit.
+    "positioning_focus": "## Cover Letter Focus",
+    "what_changed": "## What Changed",
+    "watch_outs": "## Watch Out For",
+    "verify_checklist": "## Verify Before Submitting",
+    "validation_notes": "## Validation Notes",
+    "fabrication_flags": "## Fabrication Flags",
     "change_log": "## Change Log",
     # Storybank sections (coaching_state.md ## Storybank)
     "career_highlights": "### Career Highlights",

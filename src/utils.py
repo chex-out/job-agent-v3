@@ -3,6 +3,7 @@
 import logging
 import random
 import re
+import shutil
 import time
 from datetime import date
 from pathlib import Path
@@ -27,10 +28,22 @@ def setup_logging(name: str) -> logging.Logger:
     return logger
 
 
+class CorruptYamlError(Exception):
+    """Raised when an existing YAML file fails to parse.
+
+    Deliberately distinct from a missing file (which returns {}): callers must
+    never treat a corrupt-but-recoverable file as empty, or a subsequent save
+    would permanently overwrite the user's data with nothing.
+    """
+
+
 def load_yaml(path: str | Path) -> dict | list:
     """Load a YAML file and return its contents.
 
-    Returns empty dict if file is missing or contains corrupt YAML.
+    Returns an empty dict if the file is missing. If the file exists but fails
+    to parse, backs it up to <name>.corrupt and raises CorruptYamlError — the
+    original content is preserved for manual recovery and callers cannot
+    accidentally overwrite it with empty state.
     """
     logger = logging.getLogger("utils")
     path = Path(path)
@@ -40,8 +53,16 @@ def load_yaml(path: str | Path) -> dict | list:
         with open(path, "r", encoding="utf-8", newline="\n") as f:
             return yaml.safe_load(f) or {}
     except yaml.YAMLError as e:
-        logger.error(f"Corrupt YAML in {path}: {e}")
-        return {}
+        backup = path.with_suffix(path.suffix + ".corrupt")
+        try:
+            shutil.copy2(path, backup)
+            logger.error(f"Corrupt YAML in {path} — backed up to {backup}: {e}")
+        except OSError:
+            logger.error(f"Corrupt YAML in {path} (backup failed): {e}")
+        raise CorruptYamlError(
+            f"{path} could not be read (corrupt YAML). A copy was saved to "
+            f"{backup.name} — fix or remove the original before retrying."
+        ) from e
 
 
 def save_yaml(path: str | Path, data: dict | list) -> None:
@@ -201,8 +222,21 @@ def fetch_page_text(url: str) -> str | None:
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
         }
-        response = httpx.get(url, headers=headers, follow_redirects=True, timeout=30)
-        response.raise_for_status()
+
+        def _get():
+            r = httpx.get(url, headers=headers, follow_redirects=True, timeout=30)
+            r.raise_for_status()
+            return r
+
+        # Transient network blips or 429/5xx shouldn't permanently mark a
+        # listing as error — retry like every other network call in this module
+        response = retry_with_backoff(
+            fn=_get,
+            max_retries=2,
+            base_delay=2.0,
+            retryable_exceptions=(httpx.TransportError, httpx.HTTPStatusError),
+            logger=logger,
+        )
         from bs4 import BeautifulSoup
         soup = BeautifulSoup(response.text, "html.parser")
         for tag in soup(["script", "style", "nav", "footer", "header"]):

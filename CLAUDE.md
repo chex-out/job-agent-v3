@@ -122,7 +122,7 @@ v1.1: `/coach-debrief`, `/coach-concerns`, `/analyze-offer`, `/rejection-analysi
 
 10. **/tailor-docs always runs a validation pass** before saving. Never silently save a document that contains unverified claims. If the validation pass cannot run (API error, parse failure), save with a visible warning — not silently.
 
-11. **Certifications are anti-fabrication anchors** — only claim certifications explicitly listed in `profile.yaml`'s `certifications:` field. If a JD mentions a certification the user doesn't have, flag it in Watch Outs, never add it to the resume.
+11. **Certifications are anti-fabrication anchors** — only claim certifications explicitly listed in `profile.yaml`'s `certifications:` field. If a JD mentions a certification the user doesn't have, flag it in Watch Out For, never add it to the resume.
 
 ### Profile and Storybank
 

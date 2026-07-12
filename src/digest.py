@@ -8,11 +8,10 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-load_dotenv(Path.cwd() / ".env", override=True)
-
 import resend
 from jinja2 import Environment, FileSystemLoader
 
+from src.models import ScoringRubric
 from src.utils import load_yaml, retry_with_backoff, save_yaml, setup_logging
 
 logger = setup_logging("digest")
@@ -103,15 +102,25 @@ class Digest:
             return False
 
 
-def group_by_tier(listings: list[dict]) -> dict[str, list[dict]]:
-    """Group listings into top_fit, watchlist, passed based on scores."""
+def group_by_tier(
+    listings: list[dict], rubric: "ScoringRubric | None" = None
+) -> dict[str, list[dict]]:
+    """Group listings into top_fit, watchlist, passed based on scores.
+
+    top_fit uses the rubric's preparation threshold (both axes); watchlist is
+    within 1 point of it on both axes. Falls back to default thresholds when
+    no rubric is given.
+    """
+    if rubric is None:
+        rubric = ScoringRubric()
+    prep = rubric.threshold_for_preparation
     tiers: dict[str, list[dict]] = {"top_fit": [], "watchlist": [], "passed": []}
     for listing in listings:
         sf = listing.get("skills_fit", 0)
         pf = listing.get("preference_fit", 0)
-        if sf >= 6 and pf >= 7:
+        if rubric.is_above_prep_threshold(sf, pf):
             tiers["top_fit"].append(listing)
-        elif sf >= 5 and pf >= 5:
+        elif sf >= prep.skills_fit_min - 1 and pf >= prep.preference_fit_min - 1:
             tiers["watchlist"].append(listing)
         else:
             tiers["passed"].append(listing)
@@ -139,12 +148,22 @@ def render_digest_html(tiers: dict, stats: dict) -> str:
 
 
 def main():
+    load_dotenv(Path.cwd() / ".env", override=True)
+
     parser = argparse.ArgumentParser(description="Digest: build and send job search email digest")
     parser.add_argument("--dry-run", action="store_true", help="Render HTML but don't send email")
     parser.add_argument("--url", help="Send digest for a single listing by URL")
     args = parser.parse_args()
 
     d = Digest()
+
+    # Tier with the user's configured thresholds when a profile is available
+    try:
+        from src.profile import load_profile
+
+        _, rubric = load_profile(Path.cwd() / "config")
+    except Exception:
+        rubric = None
 
     if args.url:
         listings = d.load_listing_by_url(args.url)
@@ -157,7 +176,7 @@ def main():
             logger.info("No undigested listings to send")
             return
 
-    tiers = group_by_tier(listings)
+    tiers = group_by_tier(listings, rubric)
     stats = {
         "total": len(listings),
         "top_count": len(tiers["top_fit"]),

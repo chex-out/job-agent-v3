@@ -33,7 +33,19 @@ def check_yaml_file(path: Path) -> str | None:
         return str(e)
 
 
+# Files larger than this are skipped — parsing a multi-MB pipeline file on
+# every tool use adds unbounded latency (CLAUDE.md rule 14 territory).
+MAX_VALIDATE_BYTES = 1_000_000
+
+
 def main() -> None:
+    # Windows consoles default to cp1252; the warning text below contains
+    # emoji. Without this, print() raises UnicodeEncodeError and the warning
+    # is silently swallowed by the outer handler — on the exact platform
+    # these warnings matter most.
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
     repo_root = Path(__file__).resolve().parent.parent.parent
     error_log = repo_root / "data" / "hook_errors.log"
 
@@ -42,6 +54,8 @@ def main() -> None:
                  list((repo_root / "data").glob("*.yaml"))
 
     for yaml_path in yaml_files:
+        if yaml_path.stat().st_size > MAX_VALIDATE_BYTES:
+            continue
         error = check_yaml_file(yaml_path)
         if error is None:
             continue
@@ -73,11 +87,16 @@ if __name__ == "__main__":
     try:
         main()
     except Exception:
-        repo_root = Path(__file__).resolve().parent.parent.parent
-        error_log = repo_root / "data" / "hook_errors.log"
-        error_log.parent.mkdir(parents=True, exist_ok=True)
-        with open(error_log, "a", encoding="utf-8", newline="\n") as f:
-            f.write(f"[{datetime.now().isoformat()}] validate_yaml hook error:\n")
-            f.write(traceback.format_exc())
-            f.write("\n")
+        # The error-log write itself must never break the exit-0 guarantee
+        # (read-only checkout, locked file, full disk).
+        try:
+            repo_root = Path(__file__).resolve().parent.parent.parent
+            error_log = repo_root / "data" / "hook_errors.log"
+            error_log.parent.mkdir(parents=True, exist_ok=True)
+            with open(error_log, "a", encoding="utf-8", newline="\n") as f:
+                f.write(f"[{datetime.now().isoformat()}] validate_yaml hook error:\n")
+                f.write(traceback.format_exc())
+                f.write("\n")
+        except Exception:
+            pass
     sys.exit(0)

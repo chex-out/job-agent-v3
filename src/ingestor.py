@@ -9,7 +9,6 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-load_dotenv(Path.cwd() / ".env", override=True)
 
 from src.utils import (
     detect_source,
@@ -103,10 +102,13 @@ class Ingestor:
 
             urls = extract_urls(body)
             if urls:
-                new_emails.append({"uid": uid, "subject": subject, "urls": urls})
                 logger.info(f"Found {len(urls)} URL(s) in email: {subject}")
             else:
                 logger.warning(f"No URLs found in email: {subject}")
+            # Record no-URL emails too (empty urls list) — otherwise their UID
+            # is never saved to processed_reply_ids and they are re-fetched on
+            # every future run forever
+            new_emails.append({"uid": uid, "subject": subject, "urls": urls})
 
             conn.uid("store", uid, "+FLAGS", "\\Seen")
 
@@ -215,6 +217,8 @@ def fetch_job_emails(conn: imaplib.IMAP4_SSL, processed_ids: set[str]) -> list[d
 
 
 def main():
+    load_dotenv(Path.cwd() / ".env", override=True)
+
     parser = argparse.ArgumentParser(description="Ingestor: collect job URLs from Gmail")
     parser.parse_args()
 

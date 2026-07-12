@@ -18,7 +18,7 @@ class TestUpdateSectionNewFile:
         path = tmp_path / "notes.md"
         update_section(path, "positioning_focus", "Lead with demand gen expertise.")
         assert path.exists()
-        assert "## Positioning Focus" in path.read_text(encoding="utf-8")
+        assert "## Cover Letter Focus" in path.read_text(encoding="utf-8")
 
     def test_creates_parent_dirs(self, tmp_path):
         path = tmp_path / "deep" / "nested" / "notes.md"
@@ -29,7 +29,7 @@ class TestUpdateSectionNewFile:
         path = tmp_path / "notes.md"
         update_section(path, "what_changed", "- Moved skills section up.")
         content = path.read_text(encoding="utf-8")
-        assert "## What Changed from Base Resume" in content
+        assert "## What Changed" in content
         assert "Moved skills section up" in content
 
     def test_unknown_key_raises_value_error(self, tmp_path):
@@ -52,7 +52,7 @@ class TestUpdateSectionOverwrite:
         update_section(path, "positioning_focus", "Draft A.")
         update_section(path, "positioning_focus", "Draft B.")
         content = path.read_text(encoding="utf-8")
-        assert content.count("## Positioning Focus") == 1
+        assert content.count("## Cover Letter Focus") == 1
 
     def test_other_sections_preserved(self, tmp_path):
         path = tmp_path / "notes.md"
