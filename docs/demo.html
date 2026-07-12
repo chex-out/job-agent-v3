@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<!--
+  Job Seeker AI Toolkit — interactive demo (canned data, no backend).
+  Self-contained: no CDN, no build step. Works from file:// or GitHub Pages.
+  To publish: repo Settings → Pages → Deploy from branch → main, /docs folder.
+  Score card format mirrors .claude/commands/score-job.md (canonical shape).
+  The Alex Chen × Meridian Pay card must stay in sync with docs/walkthrough.md.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Job Seeker AI Toolkit — Demo</title>
+<style>
+  :root {
+    --bg: #f7f6f3; --card: #ffffff; --ink: #1a1a1a; --muted: #6b6b6b;
+    --accent: #4a5d7e; --accent-ink: #ffffff; --border: #e2e0da;
+    --good: #2e7d32; --warn: #b26a00; --bad: #c62828; --lock: #8a8a8a;
+    --banner: #fdf3d7; --banner-border: #e8d59a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #191a1c; --card: #232527; --ink: #ececec; --muted: #a0a0a0;
+      --accent: #7f97bd; --accent-ink: #14161a; --border: #3a3d40;
+      --good: #7cc47f; --warn: #e0a94e; --bad: #e57373; --lock: #8a8a8a;
+      --banner: #2e2a1c; --banner-border: #5a4f2e;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    padding: 1rem; max-width: 720px; margin: 0 auto;
+  }
+  header { margin: 1rem 0 1.5rem; }
+  h1 { font-size: 1.5rem; line-height: 1.25; }
+  .sub { color: var(--muted); margin-top: .35rem; }
+  .banner {
+    background: var(--banner); border: 1px solid var(--banner-border);
+    border-radius: 8px; padding: .6rem .9rem; font-size: .88rem; margin: 1rem 0;
+  }
+  .banner a { color: inherit; font-weight: 600; }
+  h2 { font-size: 1.05rem; margin: 1.4rem 0 .6rem; }
+  .grid { display: grid; gap: .6rem; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+  .pick {
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+    padding: .9rem; text-align: left; cursor: pointer; font: inherit; color: inherit;
+    transition: border-color .15s;
+  }
+  .pick:hover { border-color: var(--accent); }
+  .pick.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .pick .name { font-weight: 700; }
+  .pick .meta { color: var(--muted); font-size: .85rem; margin-top: .2rem; }
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 1.2rem; margin-top: 1rem;
+  }
+  .scoreline { display: flex; flex-wrap: wrap; gap: .5rem 1.2rem; align-items: baseline; margin: .6rem 0 .2rem; }
+  .scoreline .s { font-size: 1.15rem; font-weight: 700; }
+  .label { font-weight: 700; padding: .1rem .55rem; border-radius: 999px; font-size: .82rem; }
+  .label.strong { background: color-mix(in srgb, var(--good) 15%, transparent); color: var(--good); }
+  .label.moderate { background: color-mix(in srgb, var(--warn) 15%, transparent); color: var(--warn); }
+  .label.weak { background: color-mix(in srgb, var(--bad) 15%, transparent); color: var(--bad); }
+  .lock { color: var(--lock); }
+  .card h3 { font-size: .95rem; margin: 1rem 0 .35rem; }
+  .card ul { padding-left: 1.2rem; }
+  .card li { margin: .25rem 0; }
+  .legit { font-weight: 700; }
+  .legit.High { color: var(--good); }
+  .legit.Caution { color: var(--warn); }
+  .legit.Suspicious { color: var(--bad); }
+  .signals { color: var(--muted); font-size: .88rem; margin-top: .25rem; }
+  blockquote {
+    border-left: 3px solid var(--accent); padding: .5rem .9rem; margin-top: .4rem;
+    color: var(--ink); background: color-mix(in srgb, var(--accent) 6%, transparent);
+    border-radius: 0 8px 8px 0; font-style: italic;
+  }
+  .cta {
+    display: block; text-align: center; background: var(--accent); color: var(--accent-ink);
+    text-decoration: none; font-weight: 700; border-radius: 10px; padding: .8rem; margin: 1.4rem 0 .4rem;
+  }
+  footer { color: var(--muted); font-size: .82rem; margin: 1.2rem 0 2rem; }
+  .hide { display: none; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Job Seeker AI Toolkit</h1>
+  <p class="sub">An AI job-search assistant that runs inside Claude Code. Pick a persona and a job listing to see the kind of scored match report it produces.</p>
+</header>
+
+<div class="banner">⚠️ <strong>Sample output on canned data.</strong> The real toolkit scores <em>your</em> resume against real listings — <a href="https://github.com/chex-out/job-agent-v3">get the toolkit</a>. The <code>/try-it</code> command takes 2 minutes and saves nothing.</div>
+
+<h2>1 · Pick a job seeker</h2>
+<div class="grid" id="personas"></div>
+
+<div id="jobsWrap" class="hide">
+  <h2>2 · Pick a job they're eyeing</h2>
+  <div class="grid" id="jobs"></div>
+</div>
+
+<div id="cardWrap"></div>
+
+<a class="cta" href="https://github.com/chex-out/job-agent-v3">Get the toolkit → score your own resume</a>
+<footer>All personas, companies, and listings on this page are fictional. Cards were generated by the toolkit's real scoring prompts, then frozen as static data for this demo.</footer>
+
+<script>
+const DEMO_DATA = {
+  personas: [
+    {
+      id: "alex", name: "Alex Chen", meta: "Product Manager · Singapore · 6 yrs · B2B SaaS + fintech",
+      blurb: "Led a 0→1 payments feature to $2M ARR at a Series B fintech. Strong SQL/data instincts. Gaps: no enterprise-scale work, one 14-month tenure.",
+      jobs: [
+        {
+          company: "Meridian Pay", role: "Senior Product Manager, Merchant Payments",
+          snippet: "Series B payments company, Singapore hybrid. Own merchant payments products end-to-end.",
+          skills: 8, pref: 7, label: "Strong Match", cls: "strong",
+          strengths: [
+            "Your 0→1 payments feature launch maps directly to the JD's \"own merchant payments products end-to-end\" — same domain, same motion",
+            "\"Comfortable in SQL and data tooling\" appears verbatim in the requirements; your dashboard work is direct evidence",
+            "Singapore hybrid matches your preference"
+          ],
+          concerns: [
+            "The role wants \"experience serving enterprise merchants\" — your track record is SMB and mid-market",
+            "\"Senior\" asks for 7+ years; you have 6 — lead with scope, not tenure"
+          ],
+          legit: { level: "High", cls: "High", signals: "Company named ✓ · Description specific ✓ · Posted 12 days ago ✓ · Apply link resolves to Greenhouse ✓" },
+          cover: "I spent the last two years taking a merchant payments feature from zero to $2M ARR at a Series B fintech — the same product motion Meridian Pay is describing for this role."
+        },
+        {
+          company: "Northwind Cloud", role: "Product Manager, Platform Integrations",
+          snippet: "Mid-size infrastructure SaaS. API partnerships and integration roadmap.",
+          skills: 6, pref: 5, label: "Moderate Match", cls: "moderate",
+          strengths: [
+            "Roadmap ownership and cross-functional delivery transfer cleanly to integrations work",
+            "B2B SaaS background matches their customer base"
+          ],
+          concerns: [
+            "JD is API-platform heavy — your work has been user-facing product, not developer platform",
+            "No payments or fintech angle: this role doesn't use your strongest domain evidence",
+            "Company is infrastructure-first; product has historically been engineering-led there"
+          ],
+          legit: { level: "High", cls: "High", signals: "Company named ✓ · Description specific ✓ · Posted 8 days ago ✓ · Apply link on company domain ✓" },
+          cover: "Integrations roadmaps live or die on prioritisation discipline — the same discipline I used to sequence a payments feature from zero to $2M ARR against a wall of competing merchant requests."
+        },
+        {
+          company: "Global Talent Partners", role: "Product Manager (Confidential Client)",
+          snippet: "Recruiter posting. \"Exciting opportunity with a leading technology company.\"",
+          skills: 3, pref: 2, label: "Weak Match", cls: "weak",
+          strengths: [
+            "Title matches your target role — but that's the only concrete signal in the posting"
+          ],
+          concerns: [
+            "The description is a generic template — no product area, no team context, no requirements beyond \"5+ years PM experience\"",
+            "Cannot assess domain fit against an unnamed company"
+          ],
+          legit: { level: "Suspicious", cls: "Suspicious", signals: "Company named ✗ (confidential) · Description specific ✗ (template) · Posted 47 days ago ✗ · Apply link goes to a form aggregator ✗" },
+          cover: "— not generated. The toolkit doesn't draft applications for listings that fail the legitimacy check; it tells you to verify the employer first."
+        }
+      ]
+    },
+    {
+      id: "maya", name: "Maya Rodriguez", meta: "Marketing Manager · 8 yrs · B2B SaaS campaigns + martech",
+      blurb: "Ran an integrated launch 40% over pipeline target; led a marketing automation migration solo. Gaps: paid media recency, no direct reports.",
+      jobs: [
+        {
+          company: "Loopwork", role: "Senior Marketing Manager, Lifecycle",
+          snippet: "Product-led B2B SaaS. Own lifecycle and email programs end-to-end.",
+          skills: 8, pref: 8, label: "Strong Match", cls: "strong",
+          strengths: [
+            "Your automation platform migration is exactly the martech depth this JD's \"own our lifecycle stack\" is asking for",
+            "78% lead-to-MQL nurture redesign is direct, quantified lifecycle evidence",
+            "Product-led company matches your stated preference for experimentation-driven marketing"
+          ],
+          concerns: [
+            "JD mentions managing one direct report — your leadership evidence is a mentoring program, not line management"
+          ],
+          legit: { level: "High", cls: "High", signals: "Company named ✓ · Description specific ✓ · Posted 5 days ago ✓ · Apply link resolves to Lever ✓" },
+          cover: "I rebuilt a nurture program to a 78% lead-to-MQL rate and led a marketing automation migration solo — the two halves of the lifecycle ownership Loopwork is describing."
+        },
+        {
+          company: "Stackfield Analytics", role: "Growth Marketing Manager",
+          snippet: "Data tooling startup. Paid acquisition focus: search, social, affiliate.",
+          skills: 6, pref: 5, label: "Moderate Match", cls: "moderate",
+          strengths: [
+            "Campaign strategy and funnel metrics fluency transfer directly",
+            "Data tooling domain rewards your self-taught SQL and reporting work"
+          ],
+          concerns: [
+            "The role is 70% paid acquisition — your paid media work is 2+ years back; expect a hands-on channel deep-dive in interviews",
+            "\"Growth\" here means performance marketing, not the experimentation scope you're targeting"
+          ],
+          legit: { level: "High", cls: "High", signals: "Company named ✓ · Description specific ✓ · Posted 15 days ago ✓ · Apply link on company domain ✓" },
+          cover: "Growth at a data company is a measurement problem before it's a channel problem — and building marketing measurement is what I've done for the last three years, from campaign dashboards to a full automation migration."
+        },
+        {
+          company: "Confidential Employer", role: "Marketing Manager",
+          snippet: "\"Fast-growing company seeks dynamic marketing professional. Competitive salary.\"",
+          skills: 4, pref: 2, label: "Weak Match", cls: "weak",
+          strengths: [
+            "Generic requirements technically overlap your skills — as they would for any marketing manager"
+          ],
+          concerns: [
+            "No company name, no industry, no team context — impossible to assess real fit",
+            "\"Dynamic professional\" phrasing and salary-first pitch are recruiting-spam patterns"
+          ],
+          legit: { level: "Proceed with Caution", cls: "Caution", signals: "Company named ✗ · Description specific ✗ · Posted 30+ days ago ✗ · Apply link goes to third-party form ⚠" },
+          cover: "— not generated. The toolkit flags this listing for verification before it will draft anything."
+        }
+      ]
+    }
+  ]
+};
+
+const $ = (id) => document.getElementById(id);
+let activePersona = null;
+
+function renderPersonas() {
+  $("personas").innerHTML = DEMO_DATA.personas.map((p, i) =>
+    `<button class="pick" id="p-${p.id}" onclick="pickPersona(${i})">
+       <div class="name">${p.name}</div>
+       <div class="meta">${p.meta}</div>
+       <div class="meta">${p.blurb}</div>
+     </button>`).join("");
+}
+
+function pickPersona(i) {
+  activePersona = i;
+  const p = DEMO_DATA.personas[i];
+  DEMO_DATA.personas.forEach(q => $("p-" + q.id).classList.toggle("active", q.id === p.id));
+  $("jobsWrap").classList.remove("hide");
+  $("jobs").innerHTML = p.jobs.map((j, k) =>
+    `<button class="pick" id="j-${k}" onclick="pickJob(${k})">
+       <div class="name">${j.company}</div>
+       <div class="meta">${j.role}</div>
+       <div class="meta">${j.snippet}</div>
+     </button>`).join("");
+  $("cardWrap").innerHTML = "";
+}
+
+function pickJob(k) {
+  const p = DEMO_DATA.personas[activePersona];
+  const j = p.jobs[k];
+  p.jobs.forEach((_, i) => $("j-" + i).classList.toggle("active", i === k));
+  $("cardWrap").innerHTML =
+    `<div class="card">
+       <div class="meta" style="color:var(--muted);font-size:.85rem">— sample output, fictional persona —</div>
+       <h2 style="margin-top:.4rem">Score: ${j.company} — ${j.role}</h2>
+       <div class="scoreline">
+         <span class="s">Skills Fit: ${j.skills}/10</span>
+         <span class="s">Preference Fit: ${j.pref}/10</span>
+         <span class="label ${j.cls}">${j.label}</span>
+       </div>
+       <h3>Why this works for you</h3>
+       <ul>${j.strengths.map(s => `<li>${s}</li>`).join("")}</ul>
+       <h3>Concerns</h3>
+       <ul>${j.concerns.map(c => `<li>${c}</li>`).join("")}</ul>
+       <h3>Posting Legitimacy</h3>
+       <div class="legit ${j.legit.cls}">Confidence: ${j.legit.level}</div>
+       <div class="signals">${j.legit.signals}</div>
+       <h3>Sample cover letter opening</h3>
+       <blockquote>${j.cover}</blockquote>
+     </div>`;
+  $("cardWrap").scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+renderPersonas();
+</script>
+</body>
+</html>

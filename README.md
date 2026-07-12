@@ -11,6 +11,8 @@ An AI-powered job search assistant that runs entirely inside Claude Code. No cod
 
 **What makes it different:** Every output is anchored to your specific profile, career highlights, and positioning. Generic AI tools produce generic outputs. This produces outputs that sound like you.
 
+**See it before you install:** [full walkthrough with sample outputs](docs/walkthrough.md) · [interactive demo](https://chex-out.github.io/job-agent-v3/demo.html) (no install needed)
+
 ---
 
 ## Prerequisites
