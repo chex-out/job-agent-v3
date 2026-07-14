@@ -19,258 +19,98 @@ An AI-powered job search assistant that runs entirely inside Claude Code. No cod
 
 Before you start, you need:
 
-1. **Python 3.11 or higher**
-2. **Claude Code** (the CLI tool)
-3. **An Anthropic API key**
+1. **A Claude subscription** (Pro or higher) — Claude Code requires a paid plan
+2. **The Claude desktop app** (recommended, easiest) — or the Claude Code CLI if you prefer a terminal
+3. **Python 3.11 or higher** — used by the toolkit's helper scripts
 4. **Your resume text** — have it ready to paste during setup (plain text or Markdown is fine)
 5. **A cover letter draft** — a rough starting point to tailor from; doesn't need to be polished
+
+You do **not** need an API key for normal use — everything runs inside your Claude Code session on your subscription. An API key only matters if you later enable the optional GitHub Actions automation.
 
 ---
 
 ## Try It in 2 Minutes (before committing to full setup)
 
-You don't need the full setup to see what this does. The taster needs only Claude Code and the cloned repo — no Python install, no API key file:
+You don't need the full setup to see what this does — the taster needs only the Claude app and this folder. No Python, no configuration:
 
-1. Clone the repo and open it:
-   ```
-   git clone https://github.com/chex-out/job-agent-v3.git
-   cd job-agent-v3
-   claude
-   ```
-2. Type `/try-it`
-3. Paste your resume and one job listing you're eyeing
+1. **Get the toolkit:** on this GitHub page, click the green **Code** button → **Download ZIP**, and extract it somewhere permanent (e.g. Documents)
+2. **Open it in Claude:** install the [Claude desktop app](https://claude.ai/download) if you haven't, sign in, click the **Code** tab → **Local** → **Select folder** → choose the extracted folder
+3. Type `/try-it`, then paste your resume and one job listing you're eyeing
 
 You'll get a scored match report — strengths, honest gaps, a legitimacy check on the posting, and a sample tailored pitch. **Nothing is saved.** If you like what you see, the full setup below takes about 10 minutes and unlocks the job pipeline, tailored documents, and interview coaching.
 
 ---
 
-## Setup: Windows
+## Setup: Claude Desktop App (recommended)
 
-### Step 1 — Check Python
+The friendliest way to run the toolkit — one app, no terminal for day-to-day use.
 
-Open **Command Prompt** (search for `cmd` in the Start menu) and run:
+### Step 1 — Install the Claude app
 
-```
-python --version
-```
+Download from [claude.ai/download](https://claude.ai/download) (macOS or Windows), install, and sign in with your Claude account.
 
-You should see `Python 3.11.x` or higher. If you see an error or an older version, download Python from [python.org/downloads](https://www.python.org/downloads/) and install it. Make sure to check **"Add Python to PATH"** during installation.
+### Step 2 — Install Git (Windows only)
 
-### Step 2 — Get an Anthropic API Key
+Claude Code's local sessions on Windows require Git. Download from [git-scm.com/download/win](https://git-scm.com/download/win) and install with default options. Macs already include it.
 
-1. Go to [console.anthropic.com](https://console.anthropic.com)
-2. Sign in or create an account
-3. Click **API Keys** → **Create Key**
-4. Copy your key — you'll need it in Step 5
+### Step 3 — Install Python
 
-### Step 3 — Install Claude Code
+Download Python 3.11 or higher from [python.org/downloads](https://www.python.org/downloads/). On Windows, check **"Add Python to PATH"** during installation.
 
-Open Command Prompt and run:
+### Step 4 — Get the toolkit
 
-```
-npm install -g @anthropic-ai/claude-code
-```
+On this GitHub page: green **Code** button → **Download ZIP** → extract somewhere permanent (e.g. Documents). (If you're comfortable with git, `git clone https://github.com/chex-out/job-agent-v3.git` works too and makes updates easier.)
 
-If you see `npm not found`, you need Node.js first: [nodejs.org](https://nodejs.org) → download and install the LTS version, then retry.
+### Step 5 — Open it in Claude Code
 
-### Step 4 — Clone and Set Up the Repo
+In the Claude app: **Code** tab → **Local** → **Select folder** → choose the toolkit folder.
 
-In Command Prompt:
+### Step 6 — Let Claude install the dependencies
 
-```
-git clone https://github.com/chex-out/job-agent-v3.git
-cd job-agent-v3
-python -m pip install -e .
-```
+In the session, type:
 
-### Step 5 — Add Your API Key
+> Install this project's Python dependencies
 
-```
-copy .env.example .env
-notepad .env
-```
-
-In Notepad, replace `your_api_key_here` with your actual API key. Save and close.
-
-### Step 6 — Start Claude Code
-
-```
-claude
-```
-
-A browser window will open to authenticate. Follow the prompts.
+Claude runs the install itself — approve the command when prompted. That's the only "technical" step, and Claude does it for you.
 
 ### Step 7 — Run Setup
 
-Once Claude Code is running in your terminal, type:
-
-```
-/setup
-```
-
-Follow the conversation — Claude will ask you questions and build your profile automatically. Takes about 10 minutes.
+Type `/setup` and follow the conversation — Claude asks you questions and builds your profile automatically. Takes about 10 minutes. (Or start with `/try-it` if you haven't yet.)
 
 ### Step 8 — Enable Job Search (Indeed Connector)
 
 `/find-jobs` uses Claude's official Indeed connector as its primary job source:
 
 1. Go to [claude.com/connectors/indeed](https://claude.com/connectors/indeed) in your browser
-2. Click **Add connector** and sign in with the same Claude account you use for Claude Code
-3. Restart Claude Code (`exit`, then run `claude` again)
+2. Click **Add connector** and sign in with the same Claude account
+3. Start a new Claude Code session for it to take effect
 
 If you skip this step, `/find-jobs` will only search company career pages for companies you name manually — no automated Indeed results.
 
 ---
 
-## Setup: macOS
+## Setup: Terminal (CLI) — alternative
 
-### Step 1 — Check Python
+Prefer a terminal? The CLI runs the same engine and shares all configuration with the desktop app.
 
-Open **Terminal** (Spotlight → `Terminal`) and run:
-
-```bash
-python3 --version
-```
-
-You should see `Python 3.11.x` or higher. If not, install Python via [python.org/downloads](https://www.python.org/downloads/) or with Homebrew:
-
-```bash
-brew install python@3.11
-```
-
-### Step 2 — Get an Anthropic API Key
-
-1. Go to [console.anthropic.com](https://console.anthropic.com)
-2. Sign in or create an account
-3. Click **API Keys** → **Create Key**
-4. Copy your key — you'll need it in Step 5
-
-### Step 3 — Install Claude Code
-
-```bash
-npm install -g @anthropic-ai/claude-code
-```
-
-If `npm` is not found, install Node.js: [nodejs.org](https://nodejs.org) → download LTS, then retry.
-
-### Step 4 — Clone and Set Up the Repo
-
-```bash
-git clone https://github.com/chex-out/job-agent-v3.git
-cd job-agent-v3
-pip3 install -e .
-```
-
-### Step 5 — Add Your API Key
-
-```bash
-cp .env.example .env
-open -e .env
-```
-
-Replace `your_api_key_here` with your actual API key. Save and close.
-
-### Step 6 — Start Claude Code
-
-```bash
-claude
-```
-
-A browser window will open to authenticate.
-
-### Step 7 — Run Setup
-
-```
-/setup
-```
-
-Claude will walk you through profile creation. Takes about 10 minutes.
-
-### Step 8 — Enable Job Search (Indeed Connector)
-
-`/find-jobs` uses Claude's official Indeed connector as its primary job source:
-
-1. Go to [claude.com/connectors/indeed](https://claude.com/connectors/indeed) in your browser
-2. Click **Add connector** and sign in with the same Claude account you use for Claude Code
-3. Restart Claude Code (`exit`, then run `claude` again)
-
-If you skip this step, `/find-jobs` will only search company career pages for companies you name manually — no automated Indeed results.
-
----
-
-## Setup: Linux
-
-### Step 1 — Check Python
-
-```bash
-python3 --version
-```
-
-Should show `3.11.x` or higher. If not:
-
-**Ubuntu/Debian:**
-```bash
-sudo apt update && sudo apt install python3.11 python3-pip
-```
-
-**Fedora/RHEL:**
-```bash
-sudo dnf install python3.11
-```
-
-### Step 2 — Get an Anthropic API Key
-
-1. Go to [console.anthropic.com](https://console.anthropic.com)
-2. Sign in or create an account
-3. Click **API Keys** → **Create Key**
-4. Copy your key
-
-### Step 3 — Install Claude Code
-
-```bash
-npm install -g @anthropic-ai/claude-code
-```
-
-Install Node.js if needed: [nodejs.org](https://nodejs.org) or via your package manager (`apt install nodejs npm`).
-
-### Step 4 — Clone and Set Up the Repo
-
-```bash
-git clone https://github.com/chex-out/job-agent-v3.git
-cd job-agent-v3
-pip3 install -e .
-```
-
-### Step 5 — Add Your API Key
-
-```bash
-cp .env.example .env
-nano .env
-```
-
-Replace `your_api_key_here` with your actual key. Save with `Ctrl+O`, exit with `Ctrl+X`.
-
-### Step 6 — Start Claude Code
-
-```bash
-claude
-```
-
-### Step 7 — Run Setup
-
-```
-/setup
-```
-
-### Step 8 — Enable Job Search (Indeed Connector)
-
-`/find-jobs` uses Claude's official Indeed connector as its primary job source:
-
-1. Go to [claude.com/connectors/indeed](https://claude.com/connectors/indeed) in your browser
-2. Click **Add connector** and sign in with the same Claude account you use for Claude Code
-3. Restart Claude Code (`exit`, then run `claude` again)
-
-If you skip this step, `/find-jobs` will only search company career pages for companies you name manually — no automated Indeed results.
+1. **Install Node.js** (LTS from [nodejs.org](https://nodejs.org)), then:
+   ```
+   npm install -g @anthropic-ai/claude-code
+   ```
+2. **Install Python 3.11+** ([python.org/downloads](https://www.python.org/downloads/); on Ubuntu/Debian `sudo apt install python3.11 python3-pip`; on macOS `brew install python@3.11`). Windows users: check **"Add Python to PATH"**.
+3. **Clone and install:**
+   ```
+   git clone https://github.com/chex-out/job-agent-v3.git
+   cd job-agent-v3
+   python -m pip install -e .
+   ```
+   (macOS/Linux: `pip3 install -e .`)
+4. **Start Claude Code and authenticate:**
+   ```
+   claude
+   ```
+   A browser window opens to sign in with your Claude account on first run.
+5. **Run `/setup`** (or `/try-it` first), then follow Step 8 above to enable the Indeed connector — after adding it, restart with `exit` then `claude`.
 
 ---
 
@@ -347,6 +187,8 @@ All your job search data lives in files, not in the conversation. Clearing conte
 
 These integrations extend the search stack beyond the default Indeed connector + trafilatura. All are opt-in — the toolkit works without them.
 
+Each one needs a key in a `.env` file at the toolkit's root. If that file doesn't exist yet, just ask Claude in your session: *"Copy .env.example to .env and add my Firecrawl key: [paste key]"* — it handles the file for you.
+
 ### Firecrawl — Better Career Page Scraping
 
 By default, `/find-jobs` Mode 2 (career pages) uses trafilatura to fetch page content. Trafilatura works for static pages but fails on modern JavaScript-rendered career sites (Ashby, Lever, Greenhouse, Workday). Firecrawl handles JS rendering and returns clean structured data.
@@ -420,7 +262,7 @@ Everything in the right two columns is opt-in. If you never add those keys, noth
 
 **Python command not found** → Make sure Python is installed and added to PATH. On macOS/Linux, try `python3` instead of `python`.
 
-**`/find-jobs` returns no results** → Check that the Indeed connector is enabled (see Step 8 in your OS setup section above). If it is, try running with specific company names: `/find-jobs Stripe, Linear, Anthropic`.
+**`/find-jobs` returns no results** → Check that the Indeed connector is enabled (see Step 8 in the setup section above). If it is, try running with specific company names: `/find-jobs Stripe, Linear, Anthropic`.
 
 **Anti-fabrication keeps flagging something that's true** → Confirm it by typing "confirm" when prompted. The validator errs on the side of caution — you're the final check.
 
