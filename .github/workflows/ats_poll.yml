@@ -1,8 +1,14 @@
 name: ATS Watchlist Poll
 
+# Manual by default — like every workflow in this template. In your PRIVATE
+# copy, uncomment the schedule block to poll automatically:
+#
+#   schedule:
+#     - cron: '17 */6 * * *'   # every 6 hours (offset from :00 to be polite to shared runners)
+#
+# (On the public template repo an active cron would fire, hit the personal-data
+# guard, and email a failure notification every 6 hours.)
 on:
-  schedule:
-    - cron: '17 */6 * * *'   # every 6 hours (offset from :00 to be polite to shared runners)
   workflow_dispatch: {}
 
 permissions:
