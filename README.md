@@ -139,6 +139,7 @@ Once set up, everything happens through conversation in Claude Code.
 | Command | What it does |
 |---|---|
 | `/find-jobs` | Search for roles matching your profile |
+| `/watch-company` | Watch a company's job board — auto-detects if they use Greenhouse, Lever, or Ashby |
 | `/score-job [URL]` | Score a specific job listing |
 | `/tailor-docs` | Generate tailored resume + cover letter |
 | `/track-application` | Update a job's status |
@@ -209,6 +210,17 @@ By default, `/find-jobs` Mode 2 (career pages) uses trafilatura to fetch page co
 
 Once configured, Mode 2 will automatically use Firecrawl for career pages and fall back to trafilatura for any pages it can't handle.
 
+### ATS Watchlist — Fresh Jobs Straight from Company Job Boards
+
+No key needed — this one is built in. Most startups and tech companies host their jobs on an ATS (applicant tracking system) like **Greenhouse, Lever, or Ashby**, and all three publish free, public JSON APIs for every job board they host. That's the same data source behind those "just posted jobs" alert bots — first-party, always fresh, full descriptions included.
+
+**How to use it:**
+1. Tell Claude to watch a company: `/watch-company Stripe` — it probes each platform and detects where the company hosts its jobs
+2. Repeat for every company you care about (spotted an interesting company in a job alert bot or newsletter? Add it here)
+3. Run `/find-jobs --watchlist` any time — new postings matching your target roles are pulled, scored, and added to your pipeline
+
+Your watchlist lives in `data/target_companies.yaml`. Polling is polite (one request per company per run) and only jobs newer than `search.max_age_days` that match your target roles get scored. To poll automatically every 6 hours, enable the `ats_poll.yml` workflow (see Automated Job Digests below — it only needs the `ANTHROPIC_API_KEY` secret).
+
 ### Apify — LinkedIn Job Search
 
 Apify provides authenticated access to LinkedIn job listings via proxy-backed actors. This unlocks `/find-jobs --apify` (Mode 5), which searches LinkedIn without browser automation and returns skills data, applicant insights, and recruiter details unavailable from public scraping.
@@ -227,7 +239,7 @@ Apify provides authenticated access to LinkedIn job listings via proxy-backed ac
 
 You can set up GitHub Actions to run job searches and email you a digest. This is entirely optional — the toolkit works great without it.
 
-The workflows in `.github/workflows/` run manually (Actions tab → Run workflow); add a `schedule:` block if you want them automated. They require these **GitHub Actions secrets** (repo Settings → Secrets and variables → Actions — not your local `.env`):
+The workflows in `.github/workflows/` run manually (Actions tab → Run workflow); add a `schedule:` block if you want them automated. The exception is `ats_poll.yml`, which polls your ATS watchlist every 6 hours out of the box (GitHub disables the schedule automatically after 60 days of repo inactivity) and only needs `ANTHROPIC_API_KEY`. The full digest pipeline requires these **GitHub Actions secrets** (repo Settings → Secrets and variables → Actions — not your local `.env`):
 - `ANTHROPIC_API_KEY` — for scoring and document preparation
 - `GMAIL_ADDRESS` + `GMAIL_APP_PASSWORD` — for ingesting job URLs from email
 - `RESEND_API_KEY`, `DIGEST_FROM_EMAIL`, `DIGEST_TO_EMAIL` — [Resend](https://resend.com) account for sending the digest (free tier: 100 emails/day)
@@ -249,6 +261,7 @@ Your data stays local by default. The toolkit writes everything to files in this
 |---|---|---|
 | Anthropic API | Your prompts, profile, resume, and job listings — to power Claude's responses | Always (this is how the toolkit works) |
 | Indeed connector | Your search queries | If you enable it (Step 8) |
+| Greenhouse / Lever / Ashby | Anonymous requests for the public job boards of companies you watch (no account, no personal data sent) | Only if you add companies via `/watch-company` |
 | Firecrawl | URLs of career pages you scan | Only if you add a `FIRECRAWL_API_KEY` |
 | Apify | LinkedIn search queries + your LinkedIn session cookies | Only if you run `/find-jobs --apify` |
 | Resend | Your scored job list, emailed to you | Only if you enable the digest workflow |

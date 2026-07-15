@@ -12,7 +12,7 @@ Search for job listings matching your profile using multiple sources. Scores res
 
 ## Search Modes
 
-Run search modes in order. The default run uses Modes 1 + 2 only. Mode 4 requires `--linkedin` flag. Mode 5 requires `--apify` flag.
+Run search modes in order. The default run uses Modes 1 + 2 + 6 (Mode 6 only when the watchlist has ATS entries). Mode 4 requires `--linkedin` flag. Mode 5 requires `--apify` flag. `--watchlist` runs Mode 6 alone.
 
 ### Mode 1 — Indeed MCP (always runs)
 
@@ -46,7 +46,26 @@ companies:
     careers_url: [url]
     added: [date]
     source: [user_specified/auto_detected]
+    ats: [greenhouse/lever/ashby]     # optional — set by /watch-company detection
+    board_token: [slug]               # optional — enables Mode 6 polling
 ```
+
+When adding a company here, also try ATS detection (`python -m src.ats_poller --detect "[company]"`) so Mode 6 can poll it directly in future runs — the JSON API beats scraping the careers page.
+
+### Mode 6 — ATS Watchlist (runs if the watchlist has ATS entries; `--watchlist` runs it alone)
+
+Polls the public job-board JSON APIs (Greenhouse, Lever, Ashby) for every company in `data/target_companies.yaml` that has `ats:` and `board_token:` fields. These are first-party, unauthenticated endpoints — the freshest possible source for a company's openings, with full descriptions included.
+
+**Gating:** Runs in the default `/find-jobs` flow when at least one watchlist entry has an `ats:` field. If invoked as `/find-jobs --watchlist`, run ONLY this mode. If the watchlist is empty or has no ATS entries, say: *"Your watchlist is empty. Run `/watch-company` to add companies — give me a name and I'll detect whether they're on a supported job platform."* — and (in `--watchlist` mode) stop.
+
+**Run:**
+
+1. Execute: `python -m src.ats_poller` (add `--all-roles` if the user asked to see everything, `--company "[name]"` to poll one company). The poller dedupes against the pipeline itself and queues new listings into `data/input_listings.yaml` with `prefetched_text` — do not re-fetch or re-dedup manually.
+2. Report what it found per company from its log output (e.g., "Stripe: 240 open jobs, 3 match filters").
+3. Score the queued listings: `python -m src.scout` (batch mode scores everything queued, using the prefetched text — no page fetches).
+4. Present results in the same score card format as Mode 1, marked with source `ats`.
+
+If the user mentions a company that isn't on the watchlist yet, offer to detect and add it via the `/watch-company` flow before polling.
 
 ### Mode 3 — Glassdoor Enrichment (top results only)
 
