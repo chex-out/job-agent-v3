@@ -253,3 +253,65 @@ class TestParseJobBodyCompany:
 
     def test_returns_none_empty_string(self):
         assert parse_job_body_company("") is None
+
+
+class TestFirecrawlFetchBranch:
+    """fetch_page_text tries Firecrawl first when the key is set, and falls
+    back cleanly when it fails or the key is absent."""
+
+    def test_firecrawl_used_when_key_set(self, monkeypatch):
+        import httpx
+
+        from src.utils import fetch_page_text
+
+        monkeypatch.setenv("FIRECRAWL_API_KEY", "fc-test")
+
+        class FakeResponse:
+            status_code = 200
+
+            @staticmethod
+            def json():
+                return {"data": {"markdown": "# Job Posting\n" + "content " * 50}}
+
+        called = {}
+
+        def fake_post(url, **kwargs):
+            called["url"] = url
+            return FakeResponse()
+
+        monkeypatch.setattr(httpx, "post", fake_post)
+        text = fetch_page_text("https://jobs.ashbyhq.com/example/role")
+        assert text.startswith("# Job Posting")
+        assert "api.firecrawl.dev" in called["url"]
+
+    def test_falls_back_when_firecrawl_fails(self, monkeypatch):
+        import httpx
+
+        from src.utils import fetch_page_text
+
+        monkeypatch.setenv("FIRECRAWL_API_KEY", "fc-test")
+
+        def fake_post(url, **kwargs):
+            raise httpx.ConnectError("boom")
+
+        monkeypatch.setattr(httpx, "post", fake_post)
+        # trafilatura + httpx.get fallbacks will also fail on this fake URL;
+        # the point is no exception escapes and we get the normal None result
+        monkeypatch.setattr("src.utils.fetch_url", lambda url: None)
+        monkeypatch.setattr(httpx, "get", fake_post)
+        assert fetch_page_text("https://example.invalid/job") is None
+
+    def test_no_key_skips_firecrawl(self, monkeypatch):
+        import httpx
+
+        from src.utils import fetch_page_text
+
+        monkeypatch.delenv("FIRECRAWL_API_KEY", raising=False)
+
+        def fail_post(url, **kwargs):
+            raise AssertionError("Firecrawl must not be called without a key")
+
+        monkeypatch.setattr(httpx, "post", fail_post)
+        monkeypatch.setattr("src.utils.fetch_url", lambda url: None)
+        monkeypatch.setattr(httpx, "get", lambda *a, **k: (_ for _ in ()).throw(httpx.ConnectError("x")))
+        assert fetch_page_text("https://example.invalid/job") is None

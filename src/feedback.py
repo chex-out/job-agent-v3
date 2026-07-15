@@ -11,7 +11,17 @@ from dotenv import load_dotenv
 
 
 from src.coach_bridge import CoachBridge
-from src.utils import get_email_body, load_yaml, resolve_company_name, retry_with_backoff, save_yaml, setup_logging
+from src.utils import (
+    authorized_sender,
+    get_email_body,
+    load_yaml,
+    normalize_url,
+    resolve_company_name,
+    retry_with_backoff,
+    save_yaml,
+    sender_matches,
+    setup_logging,
+)
 
 logger = setup_logging("feedback")
 
@@ -24,6 +34,15 @@ STATUS_PATTERN = re.compile(
     r"\b(applied|skip|interviewed|rejected|offer|review)\s+(.+?)(?:\s*$|\s*[,;.\n])",
     re.IGNORECASE | re.MULTILINE,
 )
+
+# Email-tier selection command: "PREPARE 2 5", "PREPARE 1,3", or "PREPARE <url>"
+PREPARE_PATTERN = re.compile(
+    r"\bPREPARE[:\s]+((?:\d+[\s,]*)+|https?://\S+)",
+    re.IGNORECASE,
+)
+
+# How far back to search the inbox for replies
+SEARCH_WINDOW_DAYS = 30
 
 
 class FeedbackProcessor:
@@ -68,44 +87,58 @@ class FeedbackProcessor:
         conn: imaplib.IMAP4_SSL,
         processed_ids: set[str],
     ) -> list[dict]:
-        """Fetch emails containing status keywords."""
-        import email as email_lib
+        """Fetch recent emails from the authorized sender.
 
-        address = os.environ.get("GMAIL_ADDRESS", "")
+        Returns everything they sent within the search window (deduped against
+        processed UIDs); the caller parses status keywords and PREPARE
+        selections out of subject + body. Searching broadly (not by keyword
+        subject) is what lets plain digest replies like "Re: Job Search
+        Digest" carry commands in the body.
+        """
+        import email as email_lib
+        from datetime import date, timedelta
+
+        allowed = authorized_sender()
         conn.select("INBOX")
 
-        results = []
-        for keyword in STATUS_KEYWORDS:
-            search_criteria = f'(FROM "{address}" SUBJECT "{keyword}")'
-            status, data = conn.uid("search", None, search_criteria)
+        since = (date.today() - timedelta(days=SEARCH_WINDOW_DAYS)).strftime("%d-%b-%Y")
+        search_criteria = f'(FROM "{allowed}" SINCE "{since}")'
+        status, data = conn.uid("search", None, search_criteria)
 
-            if status != "OK" or not data[0]:
+        if status != "OK" or not data[0]:
+            return []
+
+        results = []
+        for uid in data[0].decode().split():
+            if uid in processed_ids:
                 continue
 
-            uids = data[0].decode().split()
-            for uid in uids:
-                if uid in processed_ids:
-                    continue
+            status, msg_data = conn.uid("fetch", uid, "(RFC822)")
+            if status != "OK" or not msg_data[0]:
+                continue
 
-                status, msg_data = conn.uid("fetch", uid, "(RFC822)")
-                if status != "OK" or not msg_data[0]:
-                    continue
+            raw_email = msg_data[0][1]
+            msg = email_lib.message_from_bytes(raw_email)
 
-                raw_email = msg_data[0][1]
-                msg = email_lib.message_from_bytes(raw_email)
-                subject = msg.get("Subject", "")
-                body = get_email_body(msg)
+            # Defense-in-depth beyond the IMAP FROM substring match
+            if not sender_matches(msg.get("From", ""), allowed):
+                logger.warning(
+                    f"Ignoring email from unauthorized sender: {msg.get('From', '')!r}"
+                )
+                results.append({
+                    "uid": uid, "subject": msg.get("Subject", ""),
+                    "body": "", "authorized": False,
+                })
+                continue
 
-                results.append({"uid": uid, "subject": subject, "body": body})
+            results.append({
+                "uid": uid,
+                "subject": msg.get("Subject", ""),
+                "body": get_email_body(msg),
+                "authorized": True,
+            })
 
-        seen = set()
-        deduped = []
-        for r in results:
-            if r["uid"] not in seen:
-                seen.add(r["uid"])
-                deduped.append(r)
-
-        return deduped
+        return results
 
     def run(self) -> int:
         """Run the full feedback flow. Returns count of status updates applied."""
@@ -139,12 +172,20 @@ class FeedbackProcessor:
                 if l.get("company_name")
             ]
 
+            digest_map = load_yaml(self.data_dir / "last_digest_map.yaml") or {}
+
             bridge = CoachBridge()
             total_updates = 0
+            total_selected = 0
             new_uids = set()
 
             for em in emails:
-                updates = parse_status_update(em["subject"], em["body"], known_companies)
+                if not em.get("authorized", True):
+                    new_uids.add(em["uid"])
+                    continue
+
+                body = strip_quoted_lines(em["body"])
+                updates = parse_status_update(em["subject"], body, known_companies)
                 has_ambiguous = any(u.get("ambiguous") for u in updates)
 
                 for update in updates:
@@ -153,6 +194,9 @@ class FeedbackProcessor:
                     if apply_status_update(update, bridge, listings_data):
                         total_updates += 1
 
+                selections = parse_prepare_selections(em["subject"], body, digest_map)
+                total_selected += apply_selections(selections, listings_data)
+
                 if not has_ambiguous:
                     new_uids.add(em["uid"])
                 else:
@@ -160,8 +204,10 @@ class FeedbackProcessor:
                         f"Email '{em['subject']}' has ambiguous matches — will retry next run"
                     )
 
-            if total_updates > 0:
+            if total_updates > 0 or total_selected > 0:
                 save_yaml(self.data_dir / "processed_listings.yaml", listings_data)
+            if total_selected > 0:
+                logger.info(f"Marked {total_selected} listing(s) for document preparation")
 
             all_ids["feedback_ids"].update(new_uids)
             self.save_processed_ids(all_ids)
@@ -172,6 +218,62 @@ class FeedbackProcessor:
             return total_updates
         finally:
             conn.logout()
+
+
+def strip_quoted_lines(body: str) -> str:
+    """Remove '>'-quoted lines from a reply body.
+
+    Replies quote the original digest — which contains the literal example
+    "PREPARE 2 5" in its instructions. Without stripping, every reply would
+    auto-select listings 2 and 5 from the quoted text.
+    """
+    return "\n".join(
+        line for line in body.splitlines() if not line.lstrip().startswith(">")
+    )
+
+
+def parse_prepare_selections(subject: str, body: str, digest_map: dict) -> list[str]:
+    """Extract selected listing URLs from PREPARE commands.
+
+    Accepts digest numbers ("PREPARE 2 5", "PREPARE 1,3") resolved through the
+    last digest's number->URL map, or a direct URL ("PREPARE https://...").
+    """
+    urls: list[str] = []
+    text = f"{subject}\n{body}"
+    for match in PREPARE_PATTERN.finditer(text):
+        token = match.group(1).strip()
+        if token.lower().startswith("http"):
+            urls.append(token)
+            continue
+        for num in re.findall(r"\d+", token):
+            url = digest_map.get(num) or digest_map.get(int(num))
+            if url:
+                urls.append(url)
+            else:
+                logger.warning(f"PREPARE {num} doesn't match any listing in the last digest")
+    return urls
+
+
+def apply_selections(urls: list[str], listings_data: dict) -> int:
+    """Mark the given listing URLs selected_for_prep. Returns count marked."""
+    marked = 0
+    for url in urls:
+        target = normalize_url(url)
+        for listing in listings_data.get("listings", []):
+            if normalize_url(listing.get("url", "")) == target:
+                if listing.get("prepared"):
+                    logger.info(f"Already prepared, skipping: {listing.get('company_name')}")
+                elif not listing.get("selected_for_prep"):
+                    listing["selected_for_prep"] = True
+                    marked += 1
+                    logger.info(
+                        f"Selected for preparation: {listing.get('company_name')} — "
+                        f"{listing.get('role_title')}"
+                    )
+                break
+        else:
+            logger.warning(f"PREPARE selection matched no listing in the pipeline: {url}")
+    return marked
 
 
 def parse_status_update(

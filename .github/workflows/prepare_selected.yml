@@ -1,25 +1,34 @@
-name: Weekly Job Digest
+name: Prepare Selected Documents
+
+# Email tier, step 2 of 2: read replies from the authorized sender —
+# PREPARE selections and status updates (applied/rejected/offer/...) —
+# tailor documents for the selected listings, validate them against the
+# source resume, and email them back as attachments.
+#
+# Supersedes the old collect_feedback.yml (status parsing happens in the
+# same feedback run). Manual by default — add a schedule block to automate,
+# e.g.:
+#   schedule:
+#     - cron: '0 */6 * * *'
 
 on:
-  workflow_dispatch: {}   # manual trigger only — add a schedule block to automate
+  workflow_dispatch: {}
 
 permissions:
   contents: write
 
 jobs:
-  digest:
+  prepare:
     runs-on: ubuntu-latest
     steps:
-      # This workflow commits personal job-search data (coaching_state.md and
-      # pipeline YAMLs) back to the repo. On a public repo that publishes your
-      # career data to everyone. Refuse unless the repo is private or the user
-      # has explicitly opted in via a repository variable.
+      # This workflow commits personal job-search data back to the repo.
+      # Refuse on public repos unless explicitly overridden — see job_digest.yml.
       - name: Refuse to commit personal data to a public repo
         if: ${{ !github.event.repository.private && vars.ALLOW_PUBLIC_DATA_COMMIT != 'true' }}
         run: |
-          echo "::error::This workflow commits your personal job-search data (coaching_state.md, data/*.yaml) to the repository."
+          echo "::error::This workflow commits your personal job-search data (prepared documents, data/*.yaml) to the repository."
           echo "::error::This repository is PUBLIC, so that data would be visible to everyone."
-          echo "::error::Fix: make this repository private (Settings -> General -> Danger Zone), or set the repository variable ALLOW_PUBLIC_DATA_COMMIT=true if you truly want this."
+          echo "::error::Fix: make this repository private, or set the repository variable ALLOW_PUBLIC_DATA_COMMIT=true if you truly want this."
           exit 1
 
       - uses: actions/checkout@v4
@@ -31,29 +40,24 @@ jobs:
       - name: Install dependencies
         run: pip install -e .
 
-      - name: Ingest URLs from Gmail
+      - name: Read replies (selections + status updates)
         env:
           GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           AUTHORIZED_SENDER: ${{ secrets.AUTHORIZED_SENDER }}
-        run: python -m src.ingestor
+        run: python -m src.feedback
 
-      - name: Score new listings
+      - name: Tailor documents for selected listings
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
-        run: python -m src.scout
+        run: python -m src.preparer --selected
 
-      # Documents are no longer auto-prepared here — the user selects listings
-      # by replying "PREPARE <numbers>" to the digest, and prepare_selected.yml
-      # tailors + delivers them. Keeps API spend consent-driven.
-
-      - name: Send digest email
+      - name: Email documents back
         env:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           DIGEST_FROM_EMAIL: ${{ secrets.DIGEST_FROM_EMAIL }}
           DIGEST_TO_EMAIL: ${{ secrets.DIGEST_TO_EMAIL }}
-        run: python -m src.digest
+        run: python -m src.digest --send-docs
 
       - name: Commit state changes
         run: |
@@ -62,6 +66,7 @@ jobs:
           for f in data/input_listings.yaml data/processed_listings.yaml data/processed_reply_ids.yaml data/last_digest_map.yaml coaching_state.md; do
             [ -f "$f" ] && git add -f "$f"
           done
-          git diff --staged --quiet || git commit -m "chore: weekly job digest $(date +%Y-%m-%d)"
+          [ -d data/prepared ] && git add -f data/prepared/
+          git diff --staged --quiet || git commit -m "chore: prepare selected $(date +%Y-%m-%d)"
           git pull --rebase
           git push

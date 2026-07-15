@@ -89,6 +89,14 @@ If you skip this step, `/find-jobs` will only search company career pages for co
 
 ---
 
+## No Claude subscription? Two more ways in
+
+**Claude Code with an API key (self-serve):** Claude Code is free software — a subscription isn't required. Create an API key at [console.anthropic.com](https://console.anthropic.com) (card required, metered billing), set it as the `ANTHROPIC_API_KEY` environment variable, and the CLI setup below works identically. Usage bills to your API account instead of a plan.
+
+**Email mode (no Claude Code at all):** run the agent for a friend or family member who just wants to email job links and get scored reports + tailored documents back. One-time setup on GitHub Actions, then they interact entirely by email. See **[docs/EMAIL_TIER.md](docs/EMAIL_TIER.md)**.
+
+---
+
 ## Setup: Terminal (CLI) — alternative
 
 Prefer a terminal? The CLI runs the same engine and shares all configuration with the desktop app.

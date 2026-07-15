@@ -1,0 +1,83 @@
+name: Profile Setup (email tier)
+
+# Creates or replaces the user's profile from a pasted resume — the headless
+# equivalent of /setup. Run from the Actions tab; paste the resume text into
+# the form. Re-run any time the resume or preferences change.
+
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: "Candidate's name"
+        required: true
+      resume_text:
+        description: "Full resume text (paste)"
+        required: true
+        type: string
+      target_roles:
+        description: "Target roles, comma-separated (e.g. Marketing Manager, Growth Manager)"
+        required: true
+      seniority:
+        description: "Seniority (e.g. mid-career, senior, director)"
+        required: false
+        default: "mid-career"
+      location:
+        description: "Location (e.g. Singapore)"
+        required: true
+      preferences:
+        description: "Free text: what must a company have, what excites them, deal-breakers"
+        required: false
+        default: ""
+      cover_letter_text:
+        description: "Base cover letter text (optional — a placeholder is used if blank)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    steps:
+      # This workflow commits personal career data (profile, resume, cover
+      # letter, coaching state) to the repo. Refuse on public repos.
+      - name: Refuse to commit personal data to a public repo
+        if: ${{ !github.event.repository.private && vars.ALLOW_PUBLIC_DATA_COMMIT != 'true' }}
+        run: |
+          echo "::error::This workflow commits a resume and personal profile to the repository."
+          echo "::error::This repository is PUBLIC, so that data would be visible to everyone."
+          echo "::error::Fix: make this repository private before running profile setup."
+          exit 1
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -e .
+
+      - name: Generate profile
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          BOOTSTRAP_NAME: ${{ github.event.inputs.name }}
+          BOOTSTRAP_RESUME: ${{ github.event.inputs.resume_text }}
+          BOOTSTRAP_TARGET_ROLES: ${{ github.event.inputs.target_roles }}
+          BOOTSTRAP_SENIORITY: ${{ github.event.inputs.seniority }}
+          BOOTSTRAP_LOCATION: ${{ github.event.inputs.location }}
+          BOOTSTRAP_PREFERENCES: ${{ github.event.inputs.preferences }}
+          BOOTSTRAP_COVER_LETTER: ${{ github.event.inputs.cover_letter_text }}
+        run: python -m src.bootstrap
+
+      - name: Commit profile
+        run: |
+          git config user.name "Job Agent"
+          git config user.email "job-agent[bot]@users.noreply.github.com"
+          for f in config/profile.yaml config/resume_base.md config/cover_letter_base.md coaching_state.md; do
+            [ -f "$f" ] && git add -f "$f"
+          done
+          git diff --staged --quiet || git commit -m "chore: profile setup $(date +%Y-%m-%d)"
+          git pull --rebase
+          git push

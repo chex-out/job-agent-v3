@@ -170,6 +170,7 @@ All Python file I/O:
 | Firecrawl as Mode 2 career page fetcher | trafilatura can't render JS-heavy SPAs (Ashby, Lever, Workday); Firecrawl handles rendering + structured extraction; falls back to trafilatura if unconfigured | 2026-04 |
 | Apify as Mode 5 opt-in (`--apify`) | Authenticated LinkedIn search via `curious_coder/linkedin-jobs-search-scraper`; uses LinkedIn session cookies + user agent from profile.yaml; returns skills/applicant insights unavailable without auth; lower TOS risk than browser automation | 2026-04 |
 | Dual-axis ScoringThreshold (skills_fit_min + preference_fit_min) | Single-int threshold conflated capability match with preference match; dual axis separates them — a weak-preference strong-skills listing should score differently from the reverse | 2026-04 |
+| Email tier on GitHub Actions (docs/EMAIL_TIER.md) | Serve friends/family without Claude Code: private repo per person = auth (secrets) + state (commits) + scheduler; email is the interface (JOB: links in, scored digest out, PREPARE reply → tailored docs as attachments). Custom chat harness rejected — would rebuild Claude Code and own its security/UX. Automated discovery deliberately excluded (no reliable headless search engine worth maintaining) | 2026-07 |
 
 ---
 

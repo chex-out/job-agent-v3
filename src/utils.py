@@ -1,6 +1,7 @@
 """Shared utilities for the Job Seeker AI Toolkit."""
 
 import logging
+import os
 import random
 import re
 import shutil
@@ -201,12 +202,67 @@ def resolve_company_name(
     return None, 0.0
 
 
+def authorized_sender() -> str:
+    """The email address allowed to send commands to the agent inbox.
+
+    Email-tier security: only this address may submit JOB: links or PREPARE
+    selections. Defaults to GMAIL_ADDRESS (the original self-send model).
+    """
+    return (
+        os.environ.get("AUTHORIZED_SENDER") or os.environ.get("GMAIL_ADDRESS", "")
+    ).strip().lower()
+
+
+def sender_matches(from_header: str, allowed: str) -> bool:
+    """Check an email From header against the allowed address.
+
+    Defense-in-depth on top of the IMAP FROM search (which substring-matches).
+    Note: From headers can be spoofed; this limits casual abuse, not a
+    determined attacker — worst case is unwanted API spend, documented in
+    docs/EMAIL_TIER.md.
+    """
+    if not allowed:
+        return False
+    match = re.search(r"<([^>]+)>", from_header)
+    addr = (match.group(1) if match else from_header).strip().lower()
+    return addr == allowed
+
+
 def fetch_page_text(url: str) -> str | None:
     """Fetch a URL and extract readable text content.
 
-    Uses trafilatura first, falls back to httpx + BeautifulSoup.
+    Tries Firecrawl's scrape API first when FIRECRAWL_API_KEY is set (handles
+    JS-rendered ATS pages like Ashby/Lever/Workday), then trafilatura, then
+    httpx + BeautifulSoup.
     """
     logger = setup_logging("utils.fetch")
+
+    firecrawl_key = os.environ.get("FIRECRAWL_API_KEY", "").strip()
+    if firecrawl_key:
+        try:
+            resp = retry_with_backoff(
+                fn=lambda: httpx.post(
+                    "https://api.firecrawl.dev/v1/scrape",
+                    headers={"Authorization": f"Bearer {firecrawl_key}"},
+                    json={"url": url, "formats": ["markdown"]},
+                    timeout=60,
+                ),
+                max_retries=1,
+                base_delay=2.0,
+                retryable_exceptions=(httpx.TransportError,),
+                logger=logger,
+            )
+            if resp.status_code == 200:
+                markdown = (resp.json().get("data") or {}).get("markdown", "")
+                if markdown and len(markdown) > 200:
+                    logger.info(f"Extracted {len(markdown)} chars via Firecrawl from {url}")
+                    return markdown
+            logger.warning(
+                f"Firecrawl returned no usable content for {url} "
+                f"(status {resp.status_code}) — falling back"
+            )
+        except Exception as e:
+            logger.warning(f"Firecrawl fetch failed for {url}: {e} — falling back")
 
     try:
         downloaded = fetch_url(url)

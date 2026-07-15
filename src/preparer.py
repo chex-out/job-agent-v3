@@ -395,7 +395,11 @@ def save_prepared_documents(
 
 
 def mark_prepared(data_dir: Path, listing_url: str) -> None:
-    """Set prepared=True for listing in processed_listings.yaml."""
+    """Set prepared=True for listing in processed_listings.yaml.
+
+    Email tier: if the listing was selected via a PREPARE reply, clear the
+    selection flag and queue the documents for email delivery (docs_pending).
+    """
     output_path = data_dir / "processed_listings.yaml"
     data = load_yaml(output_path)
     if not data or "listings" not in data:
@@ -405,6 +409,9 @@ def mark_prepared(data_dir: Path, listing_url: str) -> None:
         if listing.get("url") == listing_url:
             listing["prepared"] = True
             listing["status"] = "prepared"
+            if listing.get("selected_for_prep"):
+                listing["selected_for_prep"] = False
+                listing["docs_pending"] = True
             break
 
     save_yaml(output_path, data)
@@ -436,8 +443,12 @@ class Preparer:
         self.config_dir = config_dir or (Path.cwd() / "config")
         self.data_dir = data_dir or (Path.cwd() / "data")
 
-    def run(self, url: str | None = None) -> int:
-        """Prepare documents. If url given, prepare that listing; else all above threshold.
+    def run(self, url: str | None = None, selected: bool = False) -> int:
+        """Prepare documents.
+
+        If url given, prepare that listing. If selected=True, prepare listings
+        the user picked via a PREPARE reply (email tier). Otherwise, prepare
+        everything above the dual-axis preparation threshold.
 
         Returns count of successfully prepared listings.
         """
@@ -467,6 +478,15 @@ class Preparer:
             if not listings:
                 logger.error(f"No listing found for URL: {url}")
                 return 0
+        elif selected:
+            # Email tier: only what the user explicitly picked — no threshold
+            # gate (their choice overrides the recommendation)
+            listings = [
+                l for l in data["listings"]
+                if l.get("selected_for_prep")
+                and not l.get("prepared", False)
+                and l.get("status") != "error"
+            ]
         else:
             listings = [
                 l for l in data["listings"]
@@ -569,12 +589,18 @@ def main():
 
     parser = argparse.ArgumentParser(description="Preparer: tailor resume and cover letter per listing")
     parser.add_argument("--url", help="Prepare a single listing by URL")
+    parser.add_argument(
+        "--selected", action="store_true",
+        help="Prepare listings selected via PREPARE reply (email tier)",
+    )
     args = parser.parse_args()
 
     preparer = Preparer()
-    success = preparer.run(url=args.url)
+    success = preparer.run(url=args.url, selected=args.selected)
 
-    if success == 0:
+    # In --selected mode, "nothing selected yet" is a normal scheduled-run
+    # outcome, not a failure
+    if success == 0 and not args.selected:
         sys.exit(1)
 
 

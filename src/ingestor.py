@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 
 
 from src.utils import (
+    authorized_sender,
     detect_source,
     extract_urls,
     get_email_body,
@@ -18,6 +19,7 @@ from src.utils import (
     normalize_url,
     retry_with_backoff,
     save_yaml,
+    sender_matches,
     setup_logging,
 )
 
@@ -75,9 +77,10 @@ class Ingestor:
         import email as email_lib
 
         address = os.environ.get("GMAIL_ADDRESS", "")
+        allowed = authorized_sender()
         conn.select("INBOX")
 
-        search_criteria = f'(FROM "{address}" TO "{address}" SUBJECT "{SUBJECT_PREFIX}")'
+        search_criteria = f'(FROM "{allowed}" TO "{address}" SUBJECT "{SUBJECT_PREFIX}")'
         status, data = conn.uid("search", None, search_criteria)
 
         if status != "OK" or not data[0]:
@@ -98,6 +101,16 @@ class Ingestor:
             raw_email = msg_data[0][1]
             msg = email_lib.message_from_bytes(raw_email)
             subject = msg.get("Subject", "")
+
+            # Defense-in-depth: verify the From header, not just the IMAP
+            # search (which substring-matches). Unauthorized emails are
+            # recorded (uid, no urls) so they aren't re-fetched forever.
+            if not sender_matches(msg.get("From", ""), allowed):
+                logger.warning(f"Ignoring email from unauthorized sender: {msg.get('From', '')!r}")
+                new_emails.append({"uid": uid, "subject": subject, "urls": []})
+                conn.uid("store", uid, "+FLAGS", "\\Seen")
+                continue
+
             body = get_email_body(msg)
 
             urls = extract_urls(body)

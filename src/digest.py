@@ -70,8 +70,8 @@ class Digest:
             digest_date=str(date.today()),
         )
 
-    def send(self, html: str, subject: str) -> bool:
-        """Send digest email via Resend API. Returns True on success."""
+    def send(self, html: str, subject: str, attachments: list[dict] | None = None) -> bool:
+        """Send an email via Resend API (optionally with attachments). Returns True on success."""
         api_key = os.environ.get("RESEND_API_KEY")
         to_email = os.environ.get("DIGEST_TO_EMAIL")
         from_email = os.environ.get("DIGEST_FROM_EMAIL", "onboarding@resend.dev")
@@ -82,14 +82,18 @@ class Digest:
 
         resend.api_key = api_key
 
+        payload = {
+            "from": f"Job Agent <{from_email}>",
+            "to": [to_email],
+            "subject": subject,
+            "html": html,
+        }
+        if attachments:
+            payload["attachments"] = attachments
+
         try:
             result = retry_with_backoff(
-                fn=lambda: resend.Emails.send({
-                    "from": f"Job Agent <{from_email}>",
-                    "to": [to_email],
-                    "subject": subject,
-                    "html": html,
-                }),
+                fn=lambda: resend.Emails.send(payload),
                 max_retries=2,
                 base_delay=3.0,
                 retryable_exceptions=(Exception,),
@@ -100,6 +104,84 @@ class Digest:
         except Exception as e:
             logger.error(f"Failed to send digest after retries: {e}")
             return False
+
+
+DOCS_EMAIL_TEMPLATE = """\
+<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+            Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+  <h2 style="color: #1a1a2e;">Your tailored documents: {company} — {role}</h2>
+  <p>Attached are your tailored resume, cover letter, and preparation notes.</p>
+  <p><strong>Before you submit:</strong> open the notes file and check the
+  "Verify Before Submitting" section — it lists the claims worth
+  double-checking and the concerns an interviewer may push on.</p>
+  <p style="color: #888; font-size: 13px;">Every claim was checked against
+  your source resume; anything unverifiable was removed and is listed in the
+  notes under "Fabrication Flags".</p>
+</div>
+"""
+
+
+class DocumentDelivery:
+    """Email tier: send prepared documents as attachments for selected listings."""
+
+    def __init__(self, digest: "Digest"):
+        self.digest = digest
+        self.data_dir = digest.data_dir
+
+    def pending_listings(self, data: dict) -> list[dict]:
+        return [l for l in data.get("listings", []) if l.get("docs_pending")]
+
+    def build_attachments(self, listing: dict) -> list[dict]:
+        """Read the prepared files for a listing and return resend attachments."""
+        import base64
+
+        from src.preparer import slugify
+
+        company_slug = slugify(listing.get("company_name", "unknown"))
+        role_slug = slugify(listing.get("role_title", "unknown"))
+        prepared_dir = self.data_dir / "prepared" / company_slug / role_slug
+
+        attachments = []
+        for fname in ("resume.md", "cover_letter.md", "notes.md"):
+            path = prepared_dir / fname
+            if not path.exists():
+                logger.warning(f"Prepared file missing, skipping attachment: {path}")
+                continue
+            content = base64.b64encode(path.read_bytes()).decode("ascii")
+            attachments.append({
+                "filename": f"{company_slug}-{fname}",
+                "content": content,
+            })
+        return attachments
+
+    def run(self) -> int:
+        """Send docs for every docs_pending listing. Returns count delivered."""
+        output_path = self.data_dir / "processed_listings.yaml"
+        data = load_yaml(output_path)
+        pending = self.pending_listings(data)
+        if not pending:
+            logger.info("No prepared documents awaiting delivery")
+            return 0
+
+        delivered = 0
+        for listing in pending:
+            company = listing.get("company_name", "Unknown")
+            role = listing.get("role_title", "Unknown")
+            attachments = self.build_attachments(listing)
+            if not attachments:
+                logger.error(f"No files found to deliver for {company} — {role}")
+                continue
+
+            html = DOCS_EMAIL_TEMPLATE.format(company=company, role=role)
+            subject = f"Your tailored documents: {company} — {role}"
+            if self.digest.send(html, subject, attachments=attachments):
+                listing["docs_pending"] = False
+                delivered += 1
+
+        if delivered:
+            save_yaml(output_path, data)
+        logger.info(f"Delivered documents for {delivered}/{len(pending)} listing(s)")
+        return delivered
 
 
 def group_by_tier(
@@ -153,9 +235,17 @@ def main():
     parser = argparse.ArgumentParser(description="Digest: build and send job search email digest")
     parser.add_argument("--dry-run", action="store_true", help="Render HTML but don't send email")
     parser.add_argument("--url", help="Send digest for a single listing by URL")
+    parser.add_argument(
+        "--send-docs", action="store_true",
+        help="Email prepared documents for PREPARE-selected listings (email tier)",
+    )
     args = parser.parse_args()
 
     d = Digest()
+
+    if args.send_docs:
+        DocumentDelivery(d).run()
+        return
 
     # Tier with the user's configured thresholds when a profile is available
     try:
@@ -183,6 +273,20 @@ def main():
         "watch_count": len(tiers["watchlist"]),
         "pass_count": len(tiers["passed"]),
     }
+
+    # Number every listing and persist the number->URL map so a PREPARE reply
+    # ("PREPARE 2 5") can be resolved next feedback run. Numbers continue from
+    # previous digests (merge, never overwrite) so a reply to an OLD digest
+    # email still resolves to the right listings.
+    map_path = d.data_dir / "last_digest_map.yaml"
+    digest_map: dict = load_yaml(map_path) or {}
+    ref = max((int(k) for k in digest_map.keys()), default=0)
+    for tier_name in ("top_fit", "watchlist", "passed"):
+        for listing in tiers[tier_name]:
+            ref += 1
+            listing["ref"] = ref
+            digest_map[str(ref)] = listing.get("url", "")
+    save_yaml(map_path, digest_map)
 
     html = d.render_html(tiers, stats)
 
