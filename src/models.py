@@ -13,6 +13,7 @@ class ListingSource(str, Enum):
     LINKEDIN = "linkedin"
     INDEED = "indeed"
     CAREERS_PAGE = "careers_page"
+    ATS = "ats"  # Greenhouse/Lever/Ashby public job-board APIs
     OTHER = "other"
 
 

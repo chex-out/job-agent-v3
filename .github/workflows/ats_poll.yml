@@ -1,0 +1,59 @@
+name: ATS Watchlist Poll
+
+# Manual by default — like every workflow in this template. In your PRIVATE
+# copy, uncomment the schedule block to poll automatically:
+#
+#   schedule:
+#     - cron: '17 */6 * * *'   # every 6 hours (offset from :00 to be polite to shared runners)
+#
+# (On the public template repo an active cron would fire, hit the personal-data
+# guard, and email a failure notification every 6 hours.)
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+    steps:
+      # This workflow commits personal job-search data (pipeline YAMLs and
+      # coaching_state.md) back to the repo. On a public repo that publishes
+      # your career data to everyone. Refuse unless the repo is private or
+      # the user has explicitly opted in via a repository variable.
+      - name: Refuse to commit personal data to a public repo
+        if: ${{ !github.event.repository.private && vars.ALLOW_PUBLIC_DATA_COMMIT != 'true' }}
+        run: |
+          echo "::error::This workflow commits your personal job-search data (data/*.yaml, coaching_state.md) to the repository."
+          echo "::error::This repository is PUBLIC, so that data would be visible to everyone."
+          echo "::error::Fix: make this repository private (Settings -> General -> Danger Zone), or set the repository variable ALLOW_PUBLIC_DATA_COMMIT=true if you truly want this."
+          exit 1
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -e .
+
+      - name: Poll ATS watchlist
+        run: python -m src.ats_poller
+
+      - name: Score new listings
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python -m src.scout
+
+      - name: Commit state changes
+        run: |
+          git config user.name "Job Agent"
+          git config user.email "job-agent[bot]@users.noreply.github.com"
+          for f in data/input_listings.yaml data/processed_listings.yaml data/target_companies.yaml coaching_state.md; do
+            [ -f "$f" ] && git add -f "$f"
+          done
+          git diff --staged --quiet || git commit -m "chore: ats watchlist poll $(date +%Y-%m-%dT%H:%M)"
+          git pull --rebase
+          git push

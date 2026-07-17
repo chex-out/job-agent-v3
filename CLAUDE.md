@@ -52,7 +52,8 @@ Three files users never edit directly:
 ### Suite B — Job Discovery & Pipeline
 | Skill | Purpose |
 |---|---|
-| `/find-jobs` | Multi-mode search: Indeed MCP + career pages + Glassdoor enrichment |
+| `/find-jobs` | Multi-mode search: Indeed MCP + career pages + ATS watchlist + Glassdoor enrichment |
+| `/watch-company` | Add companies to the ATS watchlist — auto-detects Greenhouse/Lever/Ashby job boards |
 | `/score-job [URL]` | Score a single job listing against your profile |
 | `/queue-digest` | Show pipeline status — what's scored, prepared, applied |
 | `/tailor-docs` | Generate tailored resume + cover letter with anti-fabrication validation |
@@ -171,6 +172,7 @@ All Python file I/O:
 | Apify as Mode 5 opt-in (`--apify`) | Authenticated LinkedIn search via `curious_coder/linkedin-jobs-search-scraper`; uses LinkedIn session cookies + user agent from profile.yaml; returns skills/applicant insights unavailable without auth; lower TOS risk than browser automation | 2026-04 |
 | Dual-axis ScoringThreshold (skills_fit_min + preference_fit_min) | Single-int threshold conflated capability match with preference match; dual axis separates them — a weak-preference strong-skills listing should score differently from the reverse | 2026-04 |
 | Email tier on GitHub Actions (docs/EMAIL_TIER.md) | Serve friends/family without Claude Code: private repo per person = auth (secrets) + state (commits) + scheduler; email is the interface (JOB: links in, scored digest out, PREPARE reply → tailored docs as attachments). Custom chat harness rejected — would rebuild Claude Code and own its security/UX. Automated discovery deliberately excluded (no reliable headless search engine worth maintaining) | 2026-07 |
+| ATS watchlist poller (Mode 6, `src/ats_poller.py`) | Greenhouse/Lever/Ashby publish public unauthenticated job-board JSON APIs — first-party data beats aggregator scraping for freshness and includes full descriptions (stored as `prefetched_text`, so scoring skips page fetches); watchlist grown via `/watch-company` ATS auto-detection; optional 6-hourly polling via `ats_poll.yml` | 2026-07 |
 
 ---
 

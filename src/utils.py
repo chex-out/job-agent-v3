@@ -320,13 +320,23 @@ def extract_urls(text: str) -> list[str]:
     return list(dict.fromkeys(cleaned))
 
 
+_ATS_HOSTS = (
+    "greenhouse.io",   # boards.greenhouse.io / boards-api.greenhouse.io / job-boards.greenhouse.io
+    "lever.co",        # jobs.lever.co / api.lever.co
+    "ashbyhq.com",     # jobs.ashbyhq.com / api.ashbyhq.com
+)
+
+
 def detect_source(url: str) -> str:
     """Detect the listing source from a URL."""
     url_lower = url.lower()
+    host = urlparse(url_lower).netloc
     if "linkedin.com" in url_lower:
         return "linkedin"
     elif "indeed.com" in url_lower:
         return "indeed"
+    elif any(host == h or host.endswith("." + h) for h in _ATS_HOSTS):
+        return "ats"
     elif "/careers" in url_lower or "/jobs" in url_lower:
         return "careers_page"
     return "other"
