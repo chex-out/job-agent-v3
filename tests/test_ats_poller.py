@@ -380,3 +380,86 @@ class TestDetectCompany:
         result = poller.detect_company("Acme")
         assert result["ats"] == "lever"
         assert result["board_token"] == "acme"
+
+
+class TestReviewFixes:
+    """Regressions for the pre-PR review findings."""
+
+    def test_missing_target_roles_fails_closed(self, poller, monkeypatch):
+        """No profile / no target_roles must NOT poll unfiltered — every queued
+        listing costs a scoring API call downstream (finding #2)."""
+        poller.add_company("Acme", "greenhouse", "acme")
+        payload = _fresh_gh_payload()
+        monkeypatch.setattr("src.ats_poller._fetch_json", lambda url: payload)
+        monkeypatch.setattr("src.ats_poller.time.sleep", lambda s: None)
+
+        assert poller.poll() == []  # no profile.yaml written → abort
+        # ...but --all-roles is the deliberate override
+        assert len(poller.poll(all_roles=True)) == 2
+
+    def test_company_filter_fuzzy_matches_stored_org_name(
+        self, poller, profile, monkeypatch
+    ):
+        """--detect stores the provider org name ('Stripe, Inc.'); polling with
+        the user's name ('Stripe') must still match (finding #4)."""
+        poller.add_company("Acme Corporation, Inc.", "greenhouse", "acme")
+        payload = _fresh_gh_payload()
+        monkeypatch.setattr("src.ats_poller._fetch_json", lambda url: payload)
+        monkeypatch.setattr("src.ats_poller.time.sleep", lambda s: None)
+
+        candidates = poller.poll(companies=["Acme Corporation"])
+        assert [c.role_title for c in candidates] == ["Growth Marketing Manager"]
+
+    def test_company_filter_unmatched_raises(self, poller, profile):
+        """A requested company that matches nothing must error loudly, not
+        silently report 'Queued 0' (finding #4)."""
+        poller.add_company("Acme", "greenhouse", "acme")
+        with pytest.raises(LookupError, match="Nonexistent Co"):
+            poller.poll(companies=["Nonexistent Co"])
+
+    def test_dry_run_does_not_touch_watchlist(self, poller, profile, monkeypatch):
+        """--dry-run must not stamp last_polled or rewrite the watchlist file
+        (finding #7)."""
+        poller.add_company("Acme", "greenhouse", "acme")
+        payload = _fresh_gh_payload()
+        monkeypatch.setattr("src.ats_poller._fetch_json", lambda url: payload)
+        monkeypatch.setattr("src.ats_poller.time.sleep", lambda s: None)
+
+        before = (poller.data_dir / "target_companies.yaml").read_bytes()
+        candidates = poller.poll(dry_run=True)
+        assert candidates  # still returns results
+        assert (poller.data_dir / "target_companies.yaml").read_bytes() == before
+
+    def test_last_polled_is_date_granularity(self, poller, profile, monkeypatch):
+        """Second-granularity timestamps would produce a no-op commit on every
+        scheduled run (finding #7)."""
+        poller.add_company("Acme", "greenhouse", "acme")
+        payload = _fresh_gh_payload()
+        monkeypatch.setattr("src.ats_poller._fetch_json", lambda url: payload)
+        monkeypatch.setattr("src.ats_poller.time.sleep", lambda s: None)
+
+        poller.poll()
+        data = load_yaml(poller.data_dir / "target_companies.yaml")
+        assert data["companies"][0]["last_polled"] == str(date.today())
+
+    def test_null_companies_key_does_not_crash(self, poller, profile):
+        """A hand-edited watchlist with a bare `companies:` key (YAML null)
+        must not raise TypeError (finding #6)."""
+        (poller.data_dir / "target_companies.yaml").write_text(
+            "companies:\n", encoding="utf-8"
+        )
+        assert poller.poll() == []
+        assert poller.add_company("Acme", "greenhouse", "acme") is True
+
+    def test_corrupt_profile_fails_closed(self, poller, monkeypatch):
+        """A corrupt profile.yaml must halt the poll (CorruptYamlError), not
+        degrade to unfiltered polling (finding #2)."""
+        from src.utils import CorruptYamlError
+
+        poller.add_company("Acme", "greenhouse", "acme")
+        (poller.config_dir / "profile.yaml").write_text(
+            "{{{bad yaml: [unterminated", encoding="utf-8"
+        )
+        with pytest.raises(CorruptYamlError):
+            poller.poll()
+        (poller.config_dir / "profile.yaml.corrupt").unlink(missing_ok=True)

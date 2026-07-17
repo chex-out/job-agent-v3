@@ -108,7 +108,7 @@ After scoring, save to `data/processed_listings.yaml`:
 ```yaml
 listings:
   - url: [url or "pasted-jd"]
-    source: [indeed/linkedin/careers_page/other]
+    source: [indeed/linkedin/careers_page/ats/other]
     date_added: [today]
     date_scored: [today]
     company_name: [name]

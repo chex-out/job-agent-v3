@@ -239,7 +239,7 @@ Apify provides authenticated access to LinkedIn job listings via proxy-backed ac
 
 You can set up GitHub Actions to run job searches and email you a digest. This is entirely optional — the toolkit works great without it.
 
-The workflows in `.github/workflows/` run manually (Actions tab → Run workflow); add a `schedule:` block if you want them automated. The exception is `ats_poll.yml`, which polls your ATS watchlist every 6 hours out of the box (GitHub disables the schedule automatically after 60 days of repo inactivity) and only needs `ANTHROPIC_API_KEY`. The full digest pipeline requires these **GitHub Actions secrets** (repo Settings → Secrets and variables → Actions — not your local `.env`):
+The workflows in `.github/workflows/` run manually (Actions tab → Run workflow); add a `schedule:` block if you want them automated — including `ats_poll.yml`, which ships with a ready-to-uncomment 6-hourly schedule and needs `ANTHROPIC_API_KEY` plus a committed profile (run the profile_setup workflow first). The full digest pipeline requires these **GitHub Actions secrets** (repo Settings → Secrets and variables → Actions — not your local `.env`):
 - `ANTHROPIC_API_KEY` — for scoring and document preparation
 - `GMAIL_ADDRESS` + `GMAIL_APP_PASSWORD` — for ingesting job URLs from email
 - `RESEND_API_KEY`, `DIGEST_FROM_EMAIL`, `DIGEST_TO_EMAIL` — [Resend](https://resend.com) account for sending the digest (free tier: 100 emails/day)

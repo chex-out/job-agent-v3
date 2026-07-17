@@ -306,7 +306,9 @@ class ATSPoller:
 
     def load_watchlist(self) -> dict:
         data = load_yaml(self.data_dir / WATCHLIST_FILE)
-        if not data or "companies" not in data:
+        # `or not data["companies"]` also catches a bare `companies:` key
+        # (YAML null) — iterating None would raise a raw TypeError
+        if not data or not data.get("companies"):
             data = {"companies": []}
         return data
 
@@ -379,29 +381,50 @@ class ATSPoller:
     # -- polling --
 
     def _load_search_config(self) -> tuple[int, list[str]]:
-        """Return (max_age_days, target_roles) from profile.yaml, with defaults."""
-        profile = {}
-        try:
-            profile = load_yaml(self.config_dir / "profile.yaml") or {}
-        except Exception as e:
-            logger.warning(f"Could not read profile.yaml: {e}")
+        """Return (max_age_days, target_roles) from profile.yaml, with defaults.
+
+        A corrupt profile raises CorruptYamlError (fail closed) — polling
+        without a title filter queues entire boards and each queued listing
+        costs a scoring API call downstream.
+        """
+        profile = load_yaml(self.config_dir / "profile.yaml") or {}
         max_age_days = (profile.get("search") or {}).get("max_age_days", 30)
         target_roles = profile.get("target_roles") or []
         return max_age_days, target_roles
 
     def poll(self, companies: list[str] | None = None,
-             all_roles: bool = False) -> list[Candidate]:
+             all_roles: bool = False, dry_run: bool = False) -> list[Candidate]:
         """Fetch each watchlist company's board and return filtered candidates.
 
         companies: optional list of watchlist names to poll (default: all).
+            Names are matched exactly first, then fuzzily — /watch-company may
+            have stored the provider's org name ("Stripe, Inc.") rather than
+            what the user typed ("Stripe"). Raises LookupError if a requested
+            name matches nothing.
         all_roles: skip the target-role title filter.
+        dry_run: don't touch any state (no last_polled stamps, no save).
         """
         watchlist = self.load_watchlist()
-        entries = [e for e in watchlist["companies"]
+        entries = [e for e in watchlist["companies"] or []
                    if e.get("ats") in PROVIDERS and e.get("board_token")]
         if companies:
-            wanted = {c.lower() for c in companies}
-            entries = [e for e in entries if (e.get("name") or "").lower() in wanted]
+            names = [e.get("name") or "" for e in entries]
+            matched_names: set[str] = set()
+            for requested in companies:
+                exact = [n for n in names if n.lower() == requested.lower()]
+                if exact:
+                    matched_names.update(exact)
+                    continue
+                fuzzy, _ = resolve_company_name(requested, names)
+                if fuzzy:
+                    logger.info(f"Matched '{requested}' to watchlist entry '{fuzzy}'")
+                    matched_names.add(fuzzy)
+                else:
+                    raise LookupError(
+                        f"No watchlist entry matches '{requested}'. "
+                        f"Run /watch-company to see the exact names on your watchlist."
+                    )
+            entries = [e for e in entries if (e.get("name") or "") in matched_names]
 
         if not entries:
             logger.info("No ATS-enabled companies on the watchlist — nothing to poll")
@@ -409,9 +432,15 @@ class ATSPoller:
 
         max_age_days, target_roles = self._load_search_config()
         if not all_roles and not target_roles:
-            logger.warning(
-                "No target_roles in profile.yaml — polling without a title filter"
+            # Fail closed: an absent/empty profile must not widen the poll to
+            # every open job on every board (each queued listing costs a
+            # scoring API call). --all-roles exists for the deliberate case.
+            logger.error(
+                "No target_roles found in profile.yaml — refusing to poll "
+                "without a title filter. Run /setup (or the profile_setup "
+                "workflow), or pass --all-roles to poll everything deliberately."
             )
+            return []
         cutoff = date.today() - timedelta(days=max_age_days)
 
         candidates: list[Candidate] = []
@@ -436,11 +465,16 @@ class ATSPoller:
             logger.info(f"{name}: {len(jobs)} open jobs, {len(kept)} match filters")
             candidates.extend(kept)
 
-            entry["last_polled"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
+            if not dry_run:
+                # Date granularity, not seconds: the scheduled workflow commits
+                # this file, and a per-second timestamp would produce a no-op
+                # commit every single cron run
+                entry["last_polled"] = str(date.today())
             if i < len(entries) - 1:
                 time.sleep(POLL_DELAY_SECONDS)
 
-        self.save_watchlist(watchlist)
+        if not dry_run:
+            self.save_watchlist(watchlist)
         return candidates
 
     # -- pipeline handoff --
@@ -452,10 +486,10 @@ class ATSPoller:
         processed_path = self.data_dir / "processed_listings.yaml"
 
         input_data = load_yaml(input_path)
-        if not input_data or "listings" not in input_data:
+        if not input_data or not input_data.get("listings"):
             input_data = {"listings": []}
         processed_data = load_yaml(processed_path)
-        if not processed_data or "listings" not in processed_data:
+        if not processed_data or not processed_data.get("listings"):
             processed_data = {"listings": []}
 
         existing_urls = {normalize_url(l.get("url", "")) for l in input_data["listings"]}
@@ -490,7 +524,7 @@ class ATSPoller:
     def run(self, companies: list[str] | None = None, all_roles: bool = False,
             dry_run: bool = False) -> int:
         """Poll the watchlist and queue new candidates. Returns count added."""
-        candidates = self.poll(companies=companies, all_roles=all_roles)
+        candidates = self.poll(companies=companies, all_roles=all_roles, dry_run=dry_run)
         if dry_run:
             for c in candidates:
                 logger.info(f"[dry-run] {c.company_name} — {c.role_title} ({c.url})")
@@ -531,11 +565,15 @@ def main():
         )
         return
 
-    added = poller.run(
-        companies=[args.company] if args.company else None,
-        all_roles=args.all_roles,
-        dry_run=args.dry_run,
-    )
+    try:
+        added = poller.run(
+            companies=[args.company] if args.company else None,
+            all_roles=args.all_roles,
+            dry_run=args.dry_run,
+        )
+    except LookupError as e:
+        print(str(e))
+        sys.exit(1)
     if not args.dry_run:
         print(f"✓ Queued {added} new listing(s) — run `python -m src.scout` to score them")
 
