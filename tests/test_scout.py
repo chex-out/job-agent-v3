@@ -78,3 +78,60 @@ class TestScoreListing:
     def test_returns_none_on_empty_response(self):
         client = _mock_client("")
         assert score_listing(client, "listing", PROFILE, RUBRIC) is None
+
+
+class TestErrorRetry:
+    """Errored listings are retried up to MAX_SCORE_ATTEMPTS (design fix 3)."""
+
+    def _scout(self, tmp_path, listings):
+        import yaml
+
+        from src.scout import Scout
+        from src.utils import save_yaml
+
+        config_dir = tmp_path / "config"
+        data_dir = tmp_path / "data"
+        config_dir.mkdir()
+        data_dir.mkdir()
+        with open(config_dir / "profile.yaml", "w", encoding="utf-8", newline="\n") as f:
+            yaml.safe_dump({
+                "schema_version": "1.0", "name": "Maya Rodriguez",
+                "target_roles": ["Manager"], "seniority": "Senior",
+                "location": "Singapore",
+            }, f)
+        save_yaml(data_dir / "input_listings.yaml", {"listings": listings})
+        return Scout(config_dir=config_dir, data_dir=data_dir), data_dir
+
+    def test_retry_requeues_under_max_attempts(self, tmp_path, monkeypatch):
+        from src.utils import load_yaml
+
+        scout, data_dir = self._scout(tmp_path, [
+            {"url": "https://a.com/1", "status": "error", "error_count": 1},
+            {"url": "https://a.com/2", "status": "error", "error_count": 3},
+        ])
+        # Scoring fails again — the point is the requeue + counting behavior
+        monkeypatch.setattr(scout, "score_single_url", lambda *a, **k: None)
+        monkeypatch.setattr("src.scout.time.sleep", lambda s: None)
+
+        scout.run_batch(retry_errors=True)
+
+        data = load_yaml(data_dir / "input_listings.yaml")
+        by_url = {l["url"]: l for l in data["listings"]}
+        # under-max entry was retried (count went 1 -> 2, back to error)
+        assert by_url["https://a.com/1"]["error_count"] == 2
+        assert by_url["https://a.com/1"]["status"] == "error"
+        # at-max entry was NOT retried
+        assert by_url["https://a.com/2"]["error_count"] == 3
+
+    def test_no_retry_without_flag(self, tmp_path, monkeypatch):
+        from src.utils import load_yaml
+
+        scout, data_dir = self._scout(tmp_path, [
+            {"url": "https://a.com/1", "status": "error", "error_count": 1},
+        ])
+        monkeypatch.setattr(scout, "score_single_url", lambda *a, **k: None)
+
+        scout.run_batch()
+
+        data = load_yaml(data_dir / "input_listings.yaml")
+        assert data["listings"][0]["error_count"] == 1  # untouched

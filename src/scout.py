@@ -240,8 +240,19 @@ class Scout:
 
         return scored
 
-    def run_batch(self) -> list["ScoredListing"]:
-        """Score all queued listings from input_listings.yaml."""
+    # Errored listings are retried on later --retry-errors runs up to this
+    # many attempts, then left as permanent errors
+    MAX_SCORE_ATTEMPTS = 3
+
+    def run_batch(self, retry_errors: bool = False) -> list["ScoredListing"]:
+        """Score all queued listings from input_listings.yaml.
+
+        retry_errors: also re-queue previously errored listings that have
+        fewer than MAX_SCORE_ATTEMPTS failed attempts. Without this, a
+        transient failure (API outage during a scheduled run) would leave
+        listings in status: error forever — the dedup against
+        input_listings.yaml means they'd never be re-queued by the pollers.
+        """
         input_path = self.data_dir / "input_listings.yaml"
         output_path = self.data_dir / "processed_listings.yaml"
 
@@ -249,6 +260,18 @@ class Scout:
         if not listings_data or "listings" not in listings_data:
             logger.info("No queued listings found")
             return []
+
+        if retry_errors:
+            requeued = 0
+            for listing in listings_data["listings"]:
+                if (
+                    listing.get("status") == "error"
+                    and listing.get("error_count", 0) < self.MAX_SCORE_ATTEMPTS
+                ):
+                    listing["status"] = "queued"
+                    requeued += 1
+            if requeued:
+                logger.info(f"Re-queued {requeued} errored listing(s) for retry")
 
         processed_data = load_yaml(output_path)
         if not processed_data or "listings" not in processed_data:
@@ -286,7 +309,11 @@ class Scout:
                 listing["role_title"] = scored.role_title
             else:
                 listing["status"] = "error"
-                logger.warning(f"Failed to score: {url}")
+                listing["error_count"] = listing.get("error_count", 0) + 1
+                logger.warning(
+                    f"Failed to score: {url} "
+                    f"(attempt {listing['error_count']}/{self.MAX_SCORE_ATTEMPTS})"
+                )
 
             # Persist after every listing — a crash on listing N must not lose
             # the N-1 already-paid-for scores
@@ -308,6 +335,11 @@ def main():
     parser.add_argument("--url", help="Score a single URL")
     parser.add_argument("--source", default="other", help="Listing source")
     parser.add_argument("--text-file", help="Path to pre-fetched listing text")
+    parser.add_argument(
+        "--retry-errors", action="store_true",
+        help="Also re-queue previously errored listings (up to 3 attempts) — "
+             "recovers from transient failures like API outages",
+    )
     args = parser.parse_args()
 
     scout = Scout()
@@ -336,7 +368,7 @@ def main():
             logger.error("Failed to score listing")
             sys.exit(1)
     else:
-        results = scout.run_batch()
+        results = scout.run_batch(retry_errors=args.retry_errors)
         input_data = load_yaml(Path.cwd() / "data" / "input_listings.yaml")
         queued = [
             l for l in (input_data.get("listings") or [])

@@ -33,6 +33,14 @@ jobs:
 
       - uses: actions/checkout@v4
 
+      - name: Check profile exists
+        run: |
+          if [ ! -f config/profile.yaml ]; then
+            echo "::error::config/profile.yaml is not in this repository."
+            echo "::error::This workflow needs a committed profile. Run the 'Profile Setup (email tier)' workflow first (Actions tab) - it creates and commits the profile."
+            exit 1
+          fi
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'

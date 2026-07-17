@@ -352,6 +352,8 @@ class TestDetectCompany:
             "board_token": "acme",
             "detected_name": "Acme",
             "jobs_count": 2,
+            "verified": True,
+            "sample_titles": ["Growth Marketing Manager", "Site Reliability Engineer"],
         }
 
     def test_rejects_wrong_company_on_slug_collision(self, poller, monkeypatch):
@@ -463,3 +465,66 @@ class TestReviewFixes:
         with pytest.raises(CorruptYamlError):
             poller.poll()
         (poller.config_dir / "profile.yaml.corrupt").unlink(missing_ok=True)
+
+
+class TestDetection:
+    """Detection verification + confirmation gate (design fix 2)."""
+
+    def _payloads(self, mapping):
+        """Return a _fetch_json stand-in keyed by URL substring."""
+
+        def fake(url):
+            for key, payload in mapping.items():
+                if key in url:
+                    return payload
+            return None
+
+        return fake
+
+    def test_greenhouse_org_match_is_verified(self, poller, monkeypatch):
+        monkeypatch.setattr(
+            "src.ats_poller._fetch_json",
+            self._payloads({
+                "boards/acme/jobs": _fresh_gh_payload(),
+                "boards/acme": {"name": "Acme Corporation"},
+            }),
+        )
+        result = poller.detect_company("Acme")
+        assert result["verified"] is True
+        assert result["ats"] == "greenhouse"
+        assert len(result["sample_titles"]) > 0
+
+    def test_lever_detection_is_unverified(self, poller, monkeypatch):
+        lever_payload = [{
+            "id": "x", "text": "Growth Marketing Manager",
+            "hostedUrl": "https://jobs.lever.co/acme/x",
+            "createdAt": 1783468800000, "categories": {},
+        }]
+        monkeypatch.setattr(
+            "src.ats_poller._fetch_json",
+            self._payloads({"lever.co": lever_payload}),
+        )
+        result = poller.detect_company("Acme")
+        assert result["ats"] == "lever"
+        assert result["verified"] is False
+        assert result["sample_titles"] == ["Growth Marketing Manager"]
+
+    def test_dormant_empty_board_does_not_shadow_real_ats(self, poller, monkeypatch):
+        """A dormant Lever board (200 []) must not stop probing before Ashby
+        (the pre-fix behavior added the empty board and never found the real one)."""
+        ashby_payload = {"jobs": [{
+            "title": "Growth Marketing Manager",
+            "jobUrl": "https://jobs.ashbyhq.com/acme/1",
+            "isListed": True,
+        }]}
+        monkeypatch.setattr(
+            "src.ats_poller._fetch_json",
+            self._payloads({"lever.co": [], "ashbyhq.com": ashby_payload}),
+        )
+        result = poller.detect_company("Acme")
+        assert result is not None
+        assert result["ats"] == "ashby"
+
+    def test_no_board_anywhere_returns_none(self, poller, monkeypatch):
+        monkeypatch.setattr("src.ats_poller._fetch_json", lambda url: None)
+        assert poller.detect_company("Acme") is None

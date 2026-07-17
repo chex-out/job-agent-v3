@@ -28,9 +28,13 @@ Add companies to your ATS watchlist so `/find-jobs` (Mode 6) can poll their job 
    python -m src.ats_poller --detect "[Company Name]"
    ```
 
-3. **If detected** — the command adds the company to `data/target_companies.yaml` and prints the ATS, board token, and open-job count. Report it conversationally:
+3. **If detected and verified** (Greenhouse publishes the org name, which was matched) — the command adds the company and prints the ATS, board token, and open-job count. Report it conversationally:
    > "✓ Stripe hosts jobs on Greenhouse (240 open roles). Added to your watchlist — `/find-jobs --watchlist` will now pick up their new postings. `✓ Saved data/target_companies.yaml`"
    Then offer: *"Want me to poll them now?"* — if yes, run `python -m src.ats_poller --company "[name]"` then `python -m src.scout`, and present score cards.
+
+3b. **If detected but UNVERIFIED** (Lever and Ashby don't publish org names — the command prints the evidence and does NOT add): show the user what was found and ask them to confirm it's really their company:
+   > "I found a Lever board named '[token]' with [N] open jobs, but Lever doesn't confirm whose board it is — a similarly-named company could own it. Sample openings: [titles]. Do these look like [Company]'s jobs?"
+   Only if the user confirms, re-run with the confirmation flag: `python -m src.ats_poller --detect "[Company]" --yes`. If they're unsure, suggest checking the board in a browser (`jobs.lever.co/[token]` or `jobs.ashbyhq.com/[token]`) first. Never pass `--yes` without the user's explicit confirmation.
 
 4. **If not detected** — the company doesn't use a supported public job platform (or uses an unusual board token). Say so plainly:
    > "[Company] doesn't appear to use Greenhouse, Lever, or Ashby with a guessable board name. I can still check their careers page directly during `/find-jobs` (Mode 2) — want me to add them to the watchlist with just their careers page URL?"

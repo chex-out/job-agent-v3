@@ -339,9 +339,19 @@ class ATSPoller:
     def detect_company(self, name: str) -> dict | None:
         """Probe each provider for a company's board token.
 
-        Returns {"ats", "board_token", "detected_name", "jobs_count"} for the
-        first provider that responds with a job board, or None. The equivalent
-        of checking whether a company "has supported public endpoints".
+        Returns {"ats", "board_token", "detected_name", "jobs_count",
+        "verified", "sample_titles"} for the first provider that responds
+        with a NON-EMPTY job board, or None.
+
+        verified is True only when the provider exposes an org name that
+        fuzzy-matches the requested company (Greenhouse). Lever and Ashby
+        publish no org name, so a slug collision with another company's
+        board is possible — callers must get human confirmation before
+        adding unverified detections (sample_titles are the evidence).
+
+        Empty boards are skipped entirely: dormant/retired boards return
+        empty payloads (e.g. Lever serves 200 [] for retired tokens) and
+        would otherwise shadow the company's real ATS at a later provider.
         """
         slugs = candidate_slugs(name)
         if not slugs:
@@ -353,6 +363,7 @@ class ATSPoller:
                     continue
 
                 detected_name = None
+                verified = False
                 if provider.org_name:
                     detected_name = provider.org_name(slug)
                 if detected_name:
@@ -363,17 +374,28 @@ class ATSPoller:
                             f"'{detected_name}' — not a match for '{name}', skipping"
                         )
                         continue
+                    verified = True
 
                 jobs = provider.parse(payload, detected_name or name)
+                if not jobs:
+                    logger.info(
+                        f"{provider.name}/{slug} exists but has no open jobs — "
+                        f"skipping (dormant boards can shadow the real ATS)"
+                    )
+                    continue
+
                 logger.info(
                     f"Detected {name} on {provider.name} "
-                    f"(token: {slug}, {len(jobs)} open jobs)"
+                    f"(token: {slug}, {len(jobs)} open jobs, "
+                    f"{'verified' if verified else 'UNVERIFIED — needs confirmation'})"
                 )
                 return {
                     "ats": provider.name,
                     "board_token": slug,
                     "detected_name": detected_name,
                     "jobs_count": len(jobs),
+                    "verified": verified,
+                    "sample_titles": [j.role_title for j in jobs[:3]],
                 }
         logger.info(f"No supported ATS found for '{name}' (tried {', '.join(slugs)})")
         return None
@@ -538,6 +560,9 @@ def main():
     )
     parser.add_argument("--detect", metavar="COMPANY",
                         help="Detect a company's ATS and add it to the watchlist")
+    parser.add_argument("--yes", action="store_true",
+                        help="Add an unverified detection (Lever/Ashby publish no "
+                             "org name — confirm the sample titles look right first)")
     parser.add_argument("--company", metavar="NAME",
                         help="Poll only this watchlist company")
     parser.add_argument("--all-roles", action="store_true",
@@ -553,13 +578,27 @@ def main():
         if result is None:
             print(f"No supported ATS (Greenhouse/Lever/Ashby) found for '{args.detect}'.")
             sys.exit(1)
-        poller.add_company(
-            result["detected_name"] or args.detect,
-            result["ats"],
-            result["board_token"],
-        )
+
+        display = result["detected_name"] or args.detect
+        titles = "; ".join(result["sample_titles"])
+
+        if not result["verified"] and not args.yes:
+            # A slug collision could be a DIFFERENT company's board — show
+            # evidence and require explicit confirmation before adding.
+            print(
+                f"Found a {result['ats']} board at token '{result['board_token']}' "
+                f"with {result['jobs_count']} open jobs, but {result['ats']} does not "
+                f"publish the organization's name, so it can't be verified as "
+                f"'{args.detect}' automatically.\n"
+                f"Sample openings: {titles}\n"
+                f"NOT added. If those look like {args.detect}'s jobs, re-run with "
+                f"--yes to add it."
+            )
+            return
+
+        poller.add_company(display, result["ats"], result["board_token"])
         print(
-            f"✓ {result['detected_name'] or args.detect} uses {result['ats']} "
+            f"✓ {display} uses {result['ats']} "
             f"(token: {result['board_token']}, {result['jobs_count']} open jobs) "
             f"— added to data/{WATCHLIST_FILE}"
         )
