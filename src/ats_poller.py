@@ -459,8 +459,8 @@ class ATSPoller:
             # scoring API call). --all-roles exists for the deliberate case.
             logger.error(
                 "No target_roles found in profile.yaml — refusing to poll "
-                "without a title filter. Run /setup (or the profile_setup "
-                "workflow), or pass --all-roles to poll everything deliberately."
+                "without a title filter. Run /setup to add target roles, or "
+                "pass --all-roles to poll everything deliberately."
             )
             return []
         cutoff = date.today() - timedelta(days=max_age_days)

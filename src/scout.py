@@ -278,7 +278,7 @@ class Scout:
             processed_data = {"listings": []}
 
         # Dedup on normalized URLs so tracking-param variants of the same job
-        # can't slip through (matches ingestor's dedup behavior)
+        # can't slip through (matches the ATS poller's dedup behavior)
         processed_urls = {normalize_url(l["url"]) for l in processed_data["listings"]}
 
         queued = [
