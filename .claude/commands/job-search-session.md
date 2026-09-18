@@ -28,6 +28,9 @@ Stop here if profile is missing.
 
 If file doesn't exist or is empty: pipeline is empty.
 
+**4. Check storybank (only if any listings are active):**
+If step 3 found listings with `status: interviewing` or `status: applied`, `Grep` for content under `### Career Highlights` in `coaching_state.md`. No bullets = empty storybank — this drives the "Active interviews + empty storybank" suggestion below.
+
 ---
 
 ## Opening Output
@@ -83,6 +86,7 @@ Pick **one** based on current state (priority order):
 | Offers pending | `→ You have an offer from [Company]. Review it carefully before responding.` |
 | Listings ready for docs | `→ Run /tailor-docs to prepare your application for [top company] ([skills_fit]/10).` |
 | Prepared but not applied | `→ Documents are ready for [Company]. Apply when ready, then run /track-application to update your status.` |
+| Active interviews + empty storybank | `→ You have [N] interviews in play but no career stories saved. Run /coach-prep [Company] — it captures 2-3 stories as part of the prep — or /build-storybank (10 min) to do it properly.` |
 | Active interviews | `→ Run /coach-prep [Company] to prepare for your upcoming interview — or open a coaching session with /coaching-session.` |
 | All closed/skipped | `→ Run /find-jobs to search for new roles.` |
 | Scored below threshold only | `→ Run /find-jobs to search for better-matched roles, or run /score-job [URL] to score a specific listing.` |

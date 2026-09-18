@@ -22,10 +22,22 @@ Generate a tailored prep brief for a specific company and role. Covers format, c
 1. Check `config/profile.yaml` — must have non-empty `name`.
 2. Check `coaching_state.md` — must exist with a `## Storybank` section.
 
-**Storybank check:** Look for content under `### Career Highlights`. If the section exists but has no bullets (empty or just the comment line), say:
-> "I need your career stories to map to interview questions. Run `/build-storybank` (10 min) or `/coach-kickoff` (30-60 min) to build your storybank first — it makes this prep significantly more specific."
+**Storybank check:** Look for content under `### Career Highlights`. If the section has real bullets, proceed to Step 1.
 
-If the storybank exists, proceed.
+If it's empty (or just the comment line), do NOT turn the user away — an imminent interview is the best moment to capture stories. Run the quick capture below, then proceed:
+
+> "Before we prep, I need 2-3 career stories to map to their likely questions — this takes about 5 minutes and I'll save them so you never have to repeat this.
+>
+> Thinking about what [Company] will care about for this role, tell me about 2-3 moments you're proud of. For each: the role and company, what you did (one sentence), and the result (numbers are best)."
+
+Sharpen vague stories with one follow-up each ("What was the scale?" / "How did you measure success?"). Format each as the storybank does:
+```
+**[Role] at [Company]** — [what they did] — [measurable result]
+```
+
+Save them before continuing: read the current `### Career Highlights` content, append the new bullets to whatever is there, and write the combined section back with `update_section()` from `src/file_writer.py` (section key `career_highlights`). Confirm: `✓ Saved [N] stories to your storybank in coaching_state.md`
+
+Then continue with the prep using those stories. In the Closing, suggest `/build-storybank` to round out the storybank properly (positioning statement, skills evidence, superpower) when they have 10 minutes.
 
 ---
 

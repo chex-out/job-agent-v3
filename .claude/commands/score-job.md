@@ -139,3 +139,6 @@ After output, always suggest the next step:
 - If strong match: `→ Run /tailor-docs to prepare your application.`
 - If moderate match: `→ You could apply speculatively — run /tailor-docs if you want to try.`
 - If weak: `→ Run /find-jobs to search for better-matched roles.`
+
+**Storybank nudge:** If an Interview Loop entry was written AND `### Career Highlights` in `coaching_state.md` is empty, add one line:
+> `→ This one's heading toward an interview, but your storybank is empty — 10 minutes on /build-storybank now makes every prep brief and tailored document sharper.`

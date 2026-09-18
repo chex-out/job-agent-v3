@@ -232,3 +232,6 @@ After results:
 - `✓ Pipeline updated: [N] new listings added`
 - `✓ Updated coaching_state.md with [N] Interview Loop entries`
 - Suggest: `→ Run /tailor-docs to prepare documents for [top match]` or `→ Run /queue-digest to see your full pipeline.`
+
+**Storybank nudge:** If any Interview Loop entries were written this run AND `### Career Highlights` in `coaching_state.md` is empty, add one line:
+> `→ Strong matches are heading toward interviews, but your storybank is empty — 10 minutes on /build-storybank now makes every prep brief and tailored document sharper.`

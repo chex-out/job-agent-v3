@@ -12,7 +12,7 @@ Practice answering interview questions with structured feedback. Scored on 5 dim
 **Storybank check for story-based drills:** If no storybank content under `### Career Highlights`, note:
 > "I can run drills, but I won't be able to suggest specific stories to use. Run `/build-storybank` or `/coach-kickoff` to build your storybank and unlock story-mapped practice."
 
-Proceed regardless — drills work without a storybank, just with less specificity.
+Proceed regardless — drills work without a storybank, just with less specificity. Drills are also a storybank source: see "Capture strong answers" below.
 
 ---
 
@@ -130,6 +130,15 @@ Score each dimension 1-5:
 - Ground it in what the candidate actually said: "When you said '[quote]', an interviewer would think..."
 - Include at least one moment that would have genuinely impressed — candidates need to know what's working
 - If Structure scored 2, show what that felt like: "I was 30 seconds in and still didn't know where this was going"
+
+---
+
+## Capture Strong Answers
+
+When a round's answer scores 4+ on Substance and tells a story that is NOT already in the storybank, offer once (not every round):
+> "That [topic] story landed well and it's not in your storybank yet. Want me to save it so future prep and content sessions can use it?"
+
+If yes: condense the answer to the storybank format (`**[Role] at [Company]** — [what they did] — [measurable result]`), read the current `### Career Highlights` content, append the new bullet, and write the combined section back with `update_section()` from `src/file_writer.py` (section key `career_highlights`). Confirm: `✓ Added to your storybank in coaching_state.md`
 
 ---
 
