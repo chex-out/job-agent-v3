@@ -11,6 +11,16 @@ An AI-powered job search assistant that runs entirely inside Claude Code. No cod
 
 **What makes it different:** Every output is anchored to your specific profile, career highlights, and positioning. Generic AI tools produce generic outputs. This produces outputs that sound like you.
 
+**Three tools, one profile.** The toolkit is really three independent tools that share your profile — use any one alone, and each gets better when the others are in play:
+
+| Tool | Start with | What it does on its own |
+|---|---|---|
+| **Job Search** | `/find-jobs`, `/watch-company` | Finds, scores, and tracks listings; tailors documents. The watchlist polls the job boards of companies you care about. |
+| **Interview Coach** | `/coach-prep`, `/coaching-session` | Prep briefs, practice drills, confidence briefs. Works from day one — it captures your career stories as you go. |
+| **Content & Brand** | `/content-session` | LinkedIn posts, articles, newsletters in your voice. |
+
+Nothing requires anything else up front: score a job without ever coaching, prep an interview you found elsewhere, or write content without a pipeline. When the tools do meet (a high-scoring job heading toward an interview, a drill answer worth reusing in a post), the toolkit connects them for you.
+
 **See it before you install:** [full walkthrough with sample outputs](docs/walkthrough.md) · [interactive demo](https://chex-out.github.io/job-agent-v3/demo.html) (no install needed)
 
 ---

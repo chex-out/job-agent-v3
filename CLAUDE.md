@@ -36,6 +36,25 @@ Three files users never edit directly:
 
 ---
 
+## Module Map
+
+The toolkit is three user-facing tools plus a shared core. Every feature belongs to exactly one of these, and the placement rule below governs new work.
+
+| Module | Front door(s) | Owns (state) | Python |
+|---|---|---|---|
+| **Core** | `/setup`, `/try-it`, session launchers, `/compact`, `/reset` | `config/profile.yaml` | `models`, `profile`, `utils`, `file_writer`, `hooks`, `migrations` |
+| **Job Search** | `/find-jobs`, `/watch-company`, `/score-job`, `/queue-digest`, `/tailor-docs`, `/track-application` | `data/*.yaml` (pipeline + watchlist) | `ats_poller`, `scout`, `preparer` |
+| **Interview Coach** | `/coaching-session`, `/build-storybank`, `/coach-*` | `coaching_state.md` | `coach_bridge` (its inbound port) |
+| **Content & Brand** | `/content-session` | voice-guide sections of `coaching_state.md` | — |
+
+**Placement rules for new features:**
+1. **Standalone-first.** Every module must be fully usable with only Core. A user who only job-searches, only preps interviews, or only writes content gets full value without touching the others.
+2. **Nudge, never gate.** When one module would benefit from another's data (e.g., prep works better with a storybank), offer to capture the minimum inline or suggest the neighbor at the moment of value — never refuse to proceed.
+3. **Cross-module writes go through a named bridge.** Job Search writes Interview Loop entries via `coach_bridge` / `update_section()` — the only sanctioned seam. Don't add ad-hoc cross-module file writes; extend the bridge.
+4. **A feature that serves a different audience is a different product** — it doesn't get woven into this one (see the email-tier removal, 2026-09).
+
+---
+
 ## Skills Reference
 
 ### Suite A — Setup & Session Management
@@ -174,6 +193,8 @@ All Python file I/O:
 | Email tier on GitHub Actions (docs/EMAIL_TIER.md) | Serve friends/family without Claude Code: private repo per person = auth (secrets) + state (commits) + scheduler; email is the interface (JOB: links in, scored digest out, PREPARE reply → tailored docs as attachments). Custom chat harness rejected — would rebuild Claude Code and own its security/UX. Automated discovery deliberately excluded (no reliable headless search engine worth maintaining) | 2026-07 |
 | ATS watchlist poller (Mode 6, `src/ats_poller.py`) | Greenhouse/Lever/Ashby publish public unauthenticated job-board JSON APIs — first-party data beats aggregator scraping for freshness and includes full descriptions (stored as `prefetched_text`, so scoring skips page fetches); watchlist grown via `/watch-company` ATS auto-detection; optional 6-hourly polling via `ats_poll.yml` | 2026-07 |
 | Email tier removed (ingestor/feedback/digest/bootstrap + 4 workflows) | Zero users after two months; the email interface proved not user-friendly, and for interactive users `/score-job` + the ATS watchlist supersede email ingestion. `preparer.py` kept as the eval-tested anti-fabrication engine (its `--selected` email mode removed) | 2026-09 |
+| `/find-jobs` restructured as Discover → Score → Enrich stages | Numbered modes had grown non-sequential (1, 2, 6, 3, 5, 4) and exposed vendor plumbing to non-technical users; opt-in LinkedIn sources moved behind an "Additional Sources" section with unchanged flags and consent gates | 2026-09 |
+| Storybank grows through use (Module Map rule 2) | Hard-gating `/coach-prep` on a filled storybank blocked users at their moment of highest motivation; prep now captures 2-3 stories inline, drills offer to save strong answers, and job-search skills nudge when interviews approach with an empty storybank | 2026-09 |
 
 ---
 
