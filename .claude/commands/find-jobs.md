@@ -10,11 +10,34 @@ Search for job listings matching your profile using multiple sources. Scores res
 
 ---
 
-## Search Modes
+## How a Search Runs
 
-Run search modes in order. The default run uses Modes 1 + 2 + 6 (Mode 6 only when the watchlist has ATS entries). Mode 4 requires `--linkedin` flag. Mode 5 requires `--apify` flag. `--watchlist` runs Mode 6 alone.
+Every search moves through three stages: **Discover → Score → Enrich**. Discovery pulls from all default sources that apply; the user never has to pick a source.
 
-### Mode 1 — Indeed MCP (always runs)
+Flags narrow or extend discovery:
+- `/find-jobs` — all default sources below
+- `/find-jobs --watchlist` — ATS watchlist only
+- `/find-jobs --apify` or `--linkedin` — additionally run that opt-in source (see Additional Sources)
+
+---
+
+## Stage 1 — Discover
+
+Run every default source that applies, in this order. Collect all candidates before scoring.
+
+### Source: ATS Watchlist (applies when the watchlist has ATS entries)
+
+Polls the public job-board JSON APIs (Greenhouse, Lever, Ashby) for every company in `data/target_companies.yaml` that has `ats:` and `board_token:` fields. These are first-party, unauthenticated endpoints — the freshest possible source for a company's openings, with full descriptions included.
+
+1. Execute: `python -m src.ats_poller` (add `--all-roles` if the user asked to see everything, `--company "[name]"` to poll one company). The poller dedupes against the pipeline itself and queues new listings into `data/input_listings.yaml` with `prefetched_text` — do not re-fetch or re-dedup manually.
+2. Report what it found per company from its log output (e.g., "Stripe: 240 open jobs, 3 match filters").
+3. The queued listings are scored in Stage 2 by `python -m src.scout` (batch mode, uses the prefetched text — no page fetches).
+
+If the user mentions a company that isn't on the watchlist yet, offer to detect and add it via the `/watch-company` flow before polling.
+
+**In `--watchlist` mode:** run ONLY this source. If the watchlist is empty or has no ATS entries, say: *"Your watchlist is empty. Run `/watch-company` to add companies — give me a name and I'll detect whether they're on a supported job platform."* — and stop.
+
+### Source: Indeed (always applies)
 
 Use the `search_jobs` tool from the Indeed MCP. Generate queries from `profile.yaml`:
 
@@ -27,7 +50,7 @@ For each result, use `get_job_details` to fetch the full listing text. Filter ou
 
 Deduplicate against URLs already in the pipeline. Use `Grep` to search for each URL in `data/processed_listings.yaml` and `data/input_listings.yaml` — never read these files in full.
 
-### Mode 2 — Company Career Pages (runs if target companies identified)
+### Source: Company Career Pages (applies when target companies are identified)
 
 If the user mentions specific companies, or if previous sessions have identified target companies, check their careers pages directly.
 
@@ -47,27 +70,27 @@ companies:
     added: [date]
     source: [user_specified/auto_detected]
     ats: [greenhouse/lever/ashby]     # optional — set by /watch-company detection
-    board_token: [slug]               # optional — enables Mode 6 polling
+    board_token: [slug]               # optional — enables watchlist polling
 ```
 
-When adding a company here, also try ATS detection (`python -m src.ats_poller --detect "[company]"`) so Mode 6 can poll it directly in future runs — the JSON API beats scraping the careers page.
+When adding a company here, also try ATS detection (`python -m src.ats_poller --detect "[company]"`) so the watchlist source can poll it directly in future runs — the JSON API beats scraping the careers page.
 
-### Mode 6 — ATS Watchlist (runs if the watchlist has ATS entries; `--watchlist` runs it alone)
+---
 
-Polls the public job-board JSON APIs (Greenhouse, Lever, Ashby) for every company in `data/target_companies.yaml` that has `ats:` and `board_token:` fields. These are first-party, unauthenticated endpoints — the freshest possible source for a company's openings, with full descriptions included.
+## Stage 2 — Score
 
-**Gating:** Runs in the default `/find-jobs` flow when at least one watchlist entry has an `ats:` field. If invoked as `/find-jobs --watchlist`, run ONLY this mode. If the watchlist is empty or has no ATS entries, say: *"Your watchlist is empty. Run `/watch-company` to add companies — give me a name and I'll detect whether they're on a supported job platform."* — and (in `--watchlist` mode) stop.
+For each new listing found (not already in pipeline), score it using the profile rubric from `profile.yaml`:
 
-**Run:**
+**skills_fit** (0-10): role match, skills alignment, location fit, deal-breakers
+**preference_fit** (0-10): company type, AI seriousness, role scope, autonomy signals
 
-1. Execute: `python -m src.ats_poller` (add `--all-roles` if the user asked to see everything, `--company "[name]"` to poll one company). The poller dedupes against the pipeline itself and queues new listings into `data/input_listings.yaml` with `prefetched_text` — do not re-fetch or re-dedup manually.
-2. Report what it found per company from its log output (e.g., "Stripe: 240 open jobs, 3 match filters").
-3. Score the queued listings: `python -m src.scout` (batch mode scores everything queued, using the prefetched text — no page fetches).
-4. Present results in the same score card format as Mode 1, marked with source `ats`.
+Add all scored results to `data/processed_listings.yaml` using `save_yaml()` from `src/utils.py`. (Watchlist candidates queued in `input_listings.yaml` are scored with `python -m src.scout`.)
 
-If the user mentions a company that isn't on the watchlist yet, offer to detect and add it via the `/watch-company` flow before polling.
+For listings where both skills_fit ≥ `scoring.threshold_for_coaching.skills_fit_min` AND preference_fit ≥ `scoring.threshold_for_coaching.preference_fit_min`, add an entry to `coaching_state.md` Interview Loops using `update_section()` from `src/file_writer.py`.
 
-### Mode 3 — Glassdoor Enrichment (top results only)
+---
+
+## Stage 3 — Enrich (Glassdoor, top results only)
 
 After scoring, for the top 5 results by combined score (configurable via `search.glassdoor_enrich_limit` in profile.yaml, max 10):
 
@@ -80,7 +103,13 @@ Flag ratings below 3.0 with ⚠️ in the score card. Add culture notes to the l
 
 Hard cap: never enrich more than `glassdoor_enrich_limit` listings per search run.
 
-### Mode 5 — Apify LinkedIn Search (opt-in only, `--apify` flag required)
+---
+
+## Additional Sources (opt-in, flag-gated)
+
+Two more sources exist with real trade-offs (account risk, third-party actors). Never run them by default. If the user asks "can you search LinkedIn?", explain the trade-offs below and the flag to use — do not proceed on the same turn as the explanation.
+
+### Apify LinkedIn Search (`--apify` flag required)
 
 **Only run if the user explicitly invokes `/find-jobs --apify`.**
 
@@ -90,7 +119,7 @@ If `APIFY_TOKEN` is not set, respond: *"Apify search requires an API token. Add 
 
 **Cookie consent (required before any setup or run):**
 
-Before the first Mode 5 run in a session, display this and require explicit confirmation:
+Before the first Apify run in a session, display this and require explicit confirmation:
 > "Before we set this up, understand what LinkedIn session cookies are:
 > - They grant **complete access to your LinkedIn account** — anyone holding them can act as you
 > - They will be stored in **plain text** at `config/linkedin_cookies.json` on this machine (gitignored, never committed)
@@ -138,11 +167,11 @@ If the user has a preferred LinkedIn geoId for their location, they can add it t
 **Cookie rejection handling:** If Apify returns an auth error or zero results, prompt:
 > "Your LinkedIn cookies may have expired. Re-export them using Cookie-Editor while logged into LinkedIn, then replace `config/linkedin_cookies.json`."
 
-Present results in the same score card format as Mode 1. Deduplicate against URLs already in the pipeline.
+Results from this source go through Stages 2-3 like any other. Deduplicate against URLs already in the pipeline.
 
-**Note:** Even via API, scraping LinkedIn may conflict with their terms of service. This mode is opt-in for users who accept that risk. Claude does not endorse scraping any platform in violation of its ToS.
+**Note:** Even via API, scraping LinkedIn may conflict with their terms of service. This source is opt-in for users who accept that risk. Claude does not endorse scraping any platform in violation of its ToS.
 
-### Mode 4 — LinkedIn via Chrome Extension (opt-in only, `--linkedin` flag required)
+### LinkedIn via Chrome Extension (`--linkedin` flag required)
 
 **Only run if the user explicitly invokes `/find-jobs --linkedin`.**
 
@@ -155,20 +184,7 @@ If confirmed:
 - Extract listing titles, companies, and URLs only
 - Do NOT interact with profiles, send messages, or take any action beyond reading listings
 
-This mode is strictly read-only on job listings. Any other action is out of scope.
-
----
-
-## Scoring Results
-
-For each new listing found (not already in pipeline), score it using the profile rubric from `profile.yaml`:
-
-**skills_fit** (0-10): role match, skills alignment, location fit, deal-breakers
-**preference_fit** (0-10): company type, AI seriousness, role scope, autonomy signals
-
-Add all scored results to `data/processed_listings.yaml` using `save_yaml()` from `src/utils.py`.
-
-For listings where both skills_fit ≥ `scoring.threshold_for_coaching.skills_fit_min` AND preference_fit ≥ `scoring.threshold_for_coaching.preference_fit_min`, add an entry to `coaching_state.md` Interview Loops using `update_section()` from `src/file_writer.py`.
+This source is strictly read-only on job listings. Any other action is out of scope.
 
 ---
 
@@ -216,3 +232,6 @@ After results:
 - `✓ Pipeline updated: [N] new listings added`
 - `✓ Updated coaching_state.md with [N] Interview Loop entries`
 - Suggest: `→ Run /tailor-docs to prepare documents for [top match]` or `→ Run /queue-digest to see your full pipeline.`
+
+**Storybank nudge:** If any Interview Loop entries were written this run AND `### Career Highlights` in `coaching_state.md` is empty, add one line:
+> `→ Strong matches are heading toward interviews, but your storybank is empty — 10 minutes on /build-storybank now makes every prep brief and tailored document sharper.`

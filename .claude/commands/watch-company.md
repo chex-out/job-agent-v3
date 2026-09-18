@@ -1,6 +1,6 @@
 # /watch-company — Manage Your Company Watchlist
 
-Add companies to your ATS watchlist so `/find-jobs` (Mode 6) can poll their job boards directly. Given a company name, detects whether they host jobs on a supported public platform (Greenhouse, Lever, or Ashby) — the same check crowdsourced job bots run when users contribute a company.
+Add companies to your ATS watchlist so `/find-jobs` can poll their job boards directly. Given a company name, detects whether they host jobs on a supported public platform (Greenhouse, Lever, or Ashby) — the same check crowdsourced job bots run when users contribute a company.
 
 ---
 
@@ -37,7 +37,7 @@ Add companies to your ATS watchlist so `/find-jobs` (Mode 6) can poll their job 
    Only if the user confirms, re-run with the confirmation flag: `python -m src.ats_poller --detect "[Company]" --yes`. If they're unsure, suggest checking the board in a browser (`jobs.lever.co/[token]` or `jobs.ashbyhq.com/[token]`) first. Never pass `--yes` without the user's explicit confirmation.
 
 4. **If not detected** — the company doesn't use a supported public job platform (or uses an unusual board token). Say so plainly:
-   > "[Company] doesn't appear to use Greenhouse, Lever, or Ashby with a guessable board name. I can still check their careers page directly during `/find-jobs` (Mode 2) — want me to add them to the watchlist with just their careers page URL?"
+   > "[Company] doesn't appear to use Greenhouse, Lever, or Ashby with a guessable board name. I can still check their careers page directly during `/find-jobs` — want me to add them to the watchlist with just their careers page URL?"
    If yes, find their careers URL and append a plain entry (name, careers_url, added, source) to `data/target_companies.yaml` using `save_yaml()` from `src/utils.py`. Confirm: `✓ Saved data/target_companies.yaml`
 
 5. **Known board token** — if the user knows the exact board URL (e.g., `jobs.lever.co/acme-corp`), skip detection: extract the token and ATS from the URL and append the entry directly with `save_yaml()`.

@@ -36,7 +36,7 @@ jobs:
         run: |
           if [ ! -f config/profile.yaml ]; then
             echo "::error::config/profile.yaml is not in this repository."
-            echo "::error::This workflow needs a committed profile. Run the 'Profile Setup (email tier)' workflow first (Actions tab) - it creates and commits the profile."
+            echo "::error::This workflow needs a committed profile. Run /setup in Claude Code, then commit config/profile.yaml to your private copy of this repo."
             exit 1
           fi
 

@@ -114,4 +114,4 @@ All v1.1 skills follow the same conventions as existing Suite C skills:
 4. **Always end with a next step** — never leave the user without a clear action
 5. **`feedback_directness` applies** — pull from profile.yaml for any feedback delivery
 
-For skills that touch `processed_listings.yaml`, use `Digest` / `Scout` class-based API with `data_dir` constructor param — never module-level constants.
+For skills that touch `processed_listings.yaml`, use the `Scout` / `Preparer` class-based API with `data_dir` constructor param — never module-level constants.

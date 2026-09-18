@@ -109,13 +109,6 @@ class TestDataTypes:
                 f"'prepared' must be bool for '{listing['company_name']}'"
             )
 
-    def test_digested_is_boolean(self, golden_listings):
-        for listing in golden_listings:
-            if "digested" in listing:
-                assert isinstance(listing["digested"], bool), (
-                    f"'digested' must be bool for '{listing['company_name']}'"
-                )
-
     def test_url_is_string(self, golden_listings):
         for listing in golden_listings:
             assert isinstance(listing["url"], str)

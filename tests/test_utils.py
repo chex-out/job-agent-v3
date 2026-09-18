@@ -1,7 +1,6 @@
 """Tests for utils.py — retry_with_backoff, YAML safety, URL normalization, fuzzy company matching."""
 
 import tempfile
-from datetime import date
 from pathlib import Path
 from unittest.mock import patch
 
@@ -10,8 +9,6 @@ import pytest
 from src.utils import (
     load_yaml,
     normalize_url,
-    parse_job_body_company,
-    parse_job_body_date,
     resolve_company_name,
     retry_with_backoff,
 )
@@ -201,58 +198,6 @@ class TestResolveCompanyName:
         match, confidence = resolve_company_name("Anthropic", ["Anthropic, Inc.", "Google"])
         assert match == "Anthropic, Inc."
         assert confidence >= 85
-
-
-class TestParseJobBodyDate:
-    def test_extracts_old_date(self):
-        body = "Job posted on\n\nMay 04, 2023\n\nEmployee Type"
-        result = parse_job_body_date(body)
-        assert result == date(2023, 5, 4)
-
-    def test_extracts_recent_date(self):
-        body = "Job posted on\n\nMarch 12, 2026\n\nEmployee Type"
-        result = parse_job_body_date(body)
-        assert result == date(2026, 3, 12)
-
-    def test_returns_none_when_no_pattern(self):
-        body = "Posted on: November 23, 2024\nSome job description here."
-        result = parse_job_body_date(body)
-        assert result is None
-
-    def test_returns_none_empty_string(self):
-        assert parse_job_body_date("") is None
-
-    def test_handles_inline_format(self):
-        body = "Job posted on March 01, 2026 in Singapore"
-        result = parse_job_body_date(body)
-        assert result == date(2026, 3, 1)
-
-
-class TestParseJobBodyCompany:
-    def test_all_caps_about(self):
-        body = "ABOUT JANIO\n\nJanio is a logistics company"
-        result = parse_job_body_company(body)
-        assert result == "JANIO"
-
-    def test_title_case_about(self):
-        body = "About Darwinbox\n\nDarwinbox is an HR SaaS"
-        result = parse_job_body_company(body)
-        assert result == "Darwinbox"
-
-    def test_stops_at_and(self):
-        body = "About Ask & Embla and Ambi\n\nWe are a jewelry brand"
-        result = parse_job_body_company(body)
-        assert result is not None
-        assert "Ambi" not in result
-        assert "Ask" in result
-
-    def test_returns_none_when_no_pattern(self):
-        body = "Introduction\n\nThe Growth Marketing Manager owns the full customer lifecycle."
-        result = parse_job_body_company(body)
-        assert result is None
-
-    def test_returns_none_empty_string(self):
-        assert parse_job_body_company("") is None
 
 
 class TestFirecrawlFetchBranch:
