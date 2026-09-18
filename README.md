@@ -89,11 +89,9 @@ If you skip this step, `/find-jobs` will only search company career pages for co
 
 ---
 
-## No Claude subscription? Two more ways in
+## No Claude subscription? There's another way in
 
 **Claude Code with an API key (self-serve):** Claude Code is free software — a subscription isn't required. Create an API key at [console.anthropic.com](https://console.anthropic.com) (card required, metered billing), set it as the `ANTHROPIC_API_KEY` environment variable, and the CLI setup below works identically. Usage bills to your API account instead of a plan.
-
-**Email mode (no Claude Code at all):** run the agent for a friend or family member who just wants to email job links and get scored reports + tailored documents back. One-time setup on GitHub Actions, then they interact entirely by email. See **[docs/EMAIL_TIER.md](docs/EMAIL_TIER.md)**.
 
 ---
 
@@ -219,7 +217,7 @@ No key needed — this one is built in. Most startups and tech companies host th
 2. Repeat for every company you care about (spotted an interesting company in a job alert bot or newsletter? Add it here)
 3. Run `/find-jobs --watchlist` any time — new postings matching your target roles are pulled, scored, and added to your pipeline
 
-Your watchlist lives in `data/target_companies.yaml`. Polling is polite (one request per company per run) and only jobs newer than `search.max_age_days` that match your target roles get scored. To poll automatically every 6 hours, enable the `ats_poll.yml` workflow (see Automated Job Digests below — it only needs the `ANTHROPIC_API_KEY` secret).
+Your watchlist lives in `data/target_companies.yaml`. Polling is polite (one request per company per run) and only jobs newer than `search.max_age_days` that match your target roles get scored. To poll automatically every 6 hours, enable the `ats_poll.yml` workflow (see Scheduled Watchlist Polling below — it only needs the `ANTHROPIC_API_KEY` secret).
 
 ### Apify — LinkedIn Job Search
 
@@ -235,16 +233,17 @@ Apify provides authenticated access to LinkedIn job listings via proxy-backed ac
 
 ---
 
-## Optional: Automated Job Digests
+## Optional: Scheduled Watchlist Polling
 
-You can set up GitHub Actions to run job searches and email you a digest. This is entirely optional — the toolkit works great without it.
+GitHub Actions can poll your ATS watchlist and score new postings even when you're not in a session. This is entirely optional — the toolkit works great without it.
 
-The workflows in `.github/workflows/` run manually (Actions tab → Run workflow); add a `schedule:` block if you want them automated — including `ats_poll.yml`, which ships with a ready-to-uncomment 6-hourly schedule and needs `ANTHROPIC_API_KEY` plus a committed profile (run the profile_setup workflow first). The full digest pipeline requires these **GitHub Actions secrets** (repo Settings → Secrets and variables → Actions — not your local `.env`):
-- `ANTHROPIC_API_KEY` — for scoring and document preparation
-- `GMAIL_ADDRESS` + `GMAIL_APP_PASSWORD` — for ingesting job URLs from email
-- `RESEND_API_KEY`, `DIGEST_FROM_EMAIL`, `DIGEST_TO_EMAIL` — [Resend](https://resend.com) account for sending the digest (free tier: 100 emails/day)
+The `ats_poll.yml` workflow runs manually (Actions tab → Run workflow) and ships with a ready-to-uncomment 6-hourly schedule. It needs:
+- The **`ANTHROPIC_API_KEY`** GitHub Actions secret (repo Settings → Secrets and variables → Actions — not your local `.env`) — for scoring
+- A **committed profile**: run `/setup` in Claude Code, then commit `config/profile.yaml` to your private copy of the repo
 
-> ⚠️ **The digest workflows commit your job-search data (pipeline files, coaching state) back to this repository.** If your copy of this repo is public, that data becomes public. The workflows refuse to run on public repos by default — make your copy private before enabling them.
+New above-threshold matches appear the next time you open a session (`/job-search-session` or `/queue-digest` shows them).
+
+> ⚠️ **This workflow commits your job-search data (pipeline files, coaching state) back to this repository.** If your copy of this repo is public, that data becomes public. The workflow refuses to run on public repos by default — make your copy private before enabling it.
 
 ---
 
@@ -264,8 +263,6 @@ Your data stays local by default. The toolkit writes everything to files in this
 | Greenhouse / Lever / Ashby | Anonymous requests for the public job boards of companies you watch (no account, no personal data sent) | Only if you add companies via `/watch-company` |
 | Firecrawl | URLs of career pages you scan | Only if you add a `FIRECRAWL_API_KEY` |
 | Apify | LinkedIn search queries + your LinkedIn session cookies | Only if you run `/find-jobs --apify` |
-| Resend | Your scored job list, emailed to you | Only if you enable the digest workflow |
-| Gmail (IMAP) | Read access to your inbox via app password | Only if you enable email ingestion |
 
 Everything in the right two columns is opt-in. If you never add those keys, nothing beyond the Anthropic API is contacted. For how Anthropic handles API data, see [Anthropic's privacy policy](https://www.anthropic.com/privacy).
 
@@ -297,7 +294,7 @@ Everything in the right two columns is opt-in. If you never add those keys, noth
 No. Everything happens through conversation in Claude Code. The Python files run automatically in the background — you never need to open or edit them.
 
 **Is my data private?**
-Your profile, resume, cover letters, and job search history all stay on your computer by default. The Anthropic API powers Claude's responses; optional integrations (Indeed, Firecrawl, Apify, Resend, Gmail) each send specific data only if you enable them — see the Privacy section above for exactly what goes where. For Anthropic's data handling and retention, see [Anthropic's privacy policy](https://www.anthropic.com/privacy).
+Your profile, resume, cover letters, and job search history all stay on your computer by default. The Anthropic API powers Claude's responses; optional integrations (Indeed, Firecrawl, Apify) each send specific data only if you enable them — see the Privacy section above for exactly what goes where. For Anthropic's data handling and retention, see [Anthropic's privacy policy](https://www.anthropic.com/privacy).
 
 **How much does it cost?**
 It depends on your Claude plan. On a Claude subscription (Pro/Max), skill sessions count against your plan's usage like any other Claude Code conversation — no separate bill. On API-key billing, costs scale with session length; scoring a job or tailoring documents are typically cents rather than dollars per run, with coaching sessions varying by length.

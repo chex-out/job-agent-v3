@@ -122,7 +122,6 @@ listings:
     strengths: [list]
     status: scored
     prepared: false
-    digested: false
 ```
 
 Also write to `coaching_state.md` Interview Loops if skills_fit >= `scoring.threshold_for_coaching.skills_fit_min` AND preference_fit >= `scoring.threshold_for_coaching.preference_fit_min` — using `update_section()` from `src/file_writer.py`:

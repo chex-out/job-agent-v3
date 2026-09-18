@@ -173,6 +173,7 @@ All Python file I/O:
 | Dual-axis ScoringThreshold (skills_fit_min + preference_fit_min) | Single-int threshold conflated capability match with preference match; dual axis separates them — a weak-preference strong-skills listing should score differently from the reverse | 2026-04 |
 | Email tier on GitHub Actions (docs/EMAIL_TIER.md) | Serve friends/family without Claude Code: private repo per person = auth (secrets) + state (commits) + scheduler; email is the interface (JOB: links in, scored digest out, PREPARE reply → tailored docs as attachments). Custom chat harness rejected — would rebuild Claude Code and own its security/UX. Automated discovery deliberately excluded (no reliable headless search engine worth maintaining) | 2026-07 |
 | ATS watchlist poller (Mode 6, `src/ats_poller.py`) | Greenhouse/Lever/Ashby publish public unauthenticated job-board JSON APIs — first-party data beats aggregator scraping for freshness and includes full descriptions (stored as `prefetched_text`, so scoring skips page fetches); watchlist grown via `/watch-company` ATS auto-detection; optional 6-hourly polling via `ats_poll.yml` | 2026-07 |
+| Email tier removed (ingestor/feedback/digest/bootstrap + 4 workflows) | Zero users after two months; the email interface proved not user-friendly, and for interactive users `/score-job` + the ATS watchlist supersede email ingestion. `preparer.py` kept as the eval-tested anti-fabrication engine (its `--selected` email mode removed) | 2026-09 |
 
 ---
 

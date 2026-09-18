@@ -6,7 +6,6 @@ import random
 import re
 import shutil
 import time
-from datetime import date
 from pathlib import Path
 from typing import Any, Callable
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
@@ -202,32 +201,6 @@ def resolve_company_name(
     return None, 0.0
 
 
-def authorized_sender() -> str:
-    """The email address allowed to send commands to the agent inbox.
-
-    Email-tier security: only this address may submit JOB: links or PREPARE
-    selections. Defaults to GMAIL_ADDRESS (the original self-send model).
-    """
-    return (
-        os.environ.get("AUTHORIZED_SENDER") or os.environ.get("GMAIL_ADDRESS", "")
-    ).strip().lower()
-
-
-def sender_matches(from_header: str, allowed: str) -> bool:
-    """Check an email From header against the allowed address.
-
-    Defense-in-depth on top of the IMAP FROM search (which substring-matches).
-    Note: From headers can be spoofed; this limits casual abuse, not a
-    determined attacker — worst case is unwanted API spend, documented in
-    docs/EMAIL_TIER.md.
-    """
-    if not allowed:
-        return False
-    match = re.search(r"<([^>]+)>", from_header)
-    addr = (match.group(1) if match else from_header).strip().lower()
-    return addr == allowed
-
-
 def fetch_page_text(url: str) -> str | None:
     """Fetch a URL and extract readable text content.
 
@@ -308,18 +281,6 @@ def fetch_page_text(url: str) -> str | None:
     return None
 
 
-def extract_urls(text: str) -> list[str]:
-    """Extract URLs from text (for email body parsing)."""
-    url_pattern = re.compile(r'https?://[^\s<>"\')\]]+', re.IGNORECASE)
-    urls = url_pattern.findall(text)
-    cleaned = []
-    for url in urls:
-        url = url.rstrip(".,;:!?)")
-        if len(url) > 10:
-            cleaned.append(url)
-    return list(dict.fromkeys(cleaned))
-
-
 _ATS_HOSTS = (
     "greenhouse.io",   # boards.greenhouse.io / boards-api.greenhouse.io / job-boards.greenhouse.io
     "lever.co",        # jobs.lever.co / api.lever.co
@@ -340,87 +301,3 @@ def detect_source(url: str) -> str:
     elif "/careers" in url_lower or "/jobs" in url_lower:
         return "careers_page"
     return "other"
-
-
-def get_email_body(msg) -> str:
-    """Extract plain text body from an email message object.
-
-    Handles multipart messages, prefers text/plain over text/html.
-    Consolidated from ingestor.py and feedback.py.
-    """
-    if msg.is_multipart():
-        for part in msg.walk():
-            if part.get_content_type() == "text/plain":
-                payload = part.get_payload(decode=True)
-                if payload:
-                    return payload.decode("utf-8", errors="replace")
-    else:
-        payload = msg.get_payload(decode=True)
-        if payload:
-            return payload.decode("utf-8", errors="replace")
-    return ""
-
-
-_MONTH_MAP = {
-    "january": 1, "february": 2, "march": 3, "april": 4,
-    "may": 5, "june": 6, "july": 7, "august": 8,
-    "september": 9, "october": 10, "november": 11, "december": 12,
-}
-
-_BODY_DATE_RE = re.compile(
-    r"Job\s+posted\s+on\s+([A-Za-z]+)\s+(\d{1,2}),\s+(\d{4})",
-    re.IGNORECASE,
-)
-
-_BODY_COMPANY_RE = re.compile(
-    r"(?:ABOUT|About)\s+([A-Z][^\n]+?)(?:\s+and\s+[A-Z]|\s*\n)",
-)
-
-
-def parse_job_body_date(body_text: str) -> date | None:
-    """Extract original posting date from Indeed job body text."""
-    match = _BODY_DATE_RE.search(body_text)
-    if not match:
-        return None
-    month_str, day_str, year_str = match.group(1), match.group(2), match.group(3)
-    month = _MONTH_MAP.get(month_str.lower())
-    if not month:
-        return None
-    try:
-        return date(int(year_str), month, int(day_str))
-    except ValueError:
-        return None
-
-
-def parse_job_body_company(body_text: str) -> str | None:
-    """Extract the real company name from Indeed job body text."""
-    match = _BODY_COMPANY_RE.search(body_text)
-    if not match:
-        return None
-    return match.group(1).strip()
-
-
-def suggest_queries(profile_path: str | Path) -> list[dict[str, str]]:
-    """Generate Indeed search query suggestions from user profile."""
-    profile = load_yaml(profile_path)
-    if not profile:
-        return []
-
-    roles = profile.get("target_roles", [])
-    location = profile.get("location", "Singapore")
-    keywords = []
-
-    minimum_bar = profile.get("company_preferences", {}).get("minimum_bar", [])
-    for pref in minimum_bar:
-        if "ai" in pref.lower():
-            keywords.append("AI")
-            break
-
-    queries = []
-    for role in roles:
-        queries.append({"search": role, "location": location})
-        for kw in keywords:
-            queries.append({"search": f"{role} {kw}", "location": location})
-        queries.append({"search": role, "location": "remote"})
-
-    return queries

@@ -35,7 +35,6 @@ If confirmed, delete/clear the following:
 - `config/profile.yaml`
 - `data/processed_listings.yaml`
 - `data/input_listings.yaml`
-- `data/processed_reply_ids.yaml`
 - `data/session_log.md`
 - `data/hook_errors.log`
 

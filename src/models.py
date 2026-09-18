@@ -70,7 +70,6 @@ class ScoredListing(BaseModel):
     strengths: list[str] = []
 
     # Pipeline tracking
-    digested: bool = False
     prepared: bool = False
     drive_folder_url: Optional[str] = None
     culture_notes: Optional[str] = None  # Glassdoor enrichment summary

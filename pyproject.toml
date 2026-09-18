@@ -10,19 +10,14 @@ dependencies = [
     "beautifulsoup4>=4.12.0",
     "pyyaml>=6.0",
     "pydantic>=2.0",
-    "jinja2>=3.1.0",
-    "resend>=2.0.0",
     "python-dotenv>=1.0.0",
     "rapidfuzz>=3.0.0",
-    "google-api-python-client>=2.100.0",
-    "google-auth>=2.25.0",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.24.0",
-    "google-auth-oauthlib>=1.2.0",
 ]
 
 [build-system]
