@@ -198,7 +198,7 @@ Each one needs a key in a `.env` file at the toolkit's root. If that file doesn'
 
 ### Firecrawl — Better Career Page Scraping
 
-By default, `/find-jobs` Mode 2 (career pages) uses trafilatura to fetch page content. Trafilatura works for static pages but fails on modern JavaScript-rendered career sites (Ashby, Lever, Greenhouse, Workday). Firecrawl handles JS rendering and returns clean structured data.
+By default, `/find-jobs`'s career-page source uses trafilatura to fetch page content. Trafilatura works for static pages but fails on modern JavaScript-rendered career sites (Ashby, Lever, Greenhouse, Workday). Firecrawl handles JS rendering and returns clean structured data.
 
 **Setup:**
 1. Create an account at [firecrawl.dev](https://www.firecrawl.dev) — free tier includes 500 pages/month
@@ -206,7 +206,7 @@ By default, `/find-jobs` Mode 2 (career pages) uses trafilatura to fetch page co
 3. Add to `.env`: `FIRECRAWL_API_KEY=your_key_here`
 4. The `.mcp.json` file in the repo already has the Firecrawl MCP configured — Claude Code will load it automatically
 
-Once configured, Mode 2 will automatically use Firecrawl for career pages and fall back to trafilatura for any pages it can't handle.
+Once configured, `/find-jobs` will automatically use Firecrawl for career pages and fall back to trafilatura for any pages it can't handle.
 
 ### ATS Watchlist — Fresh Jobs Straight from Company Job Boards
 
@@ -221,7 +221,7 @@ Your watchlist lives in `data/target_companies.yaml`. Polling is polite (one req
 
 ### Apify — LinkedIn Job Search
 
-Apify provides authenticated access to LinkedIn job listings via proxy-backed actors. This unlocks `/find-jobs --apify` (Mode 5), which searches LinkedIn without browser automation and returns skills data, applicant insights, and recruiter details unavailable from public scraping.
+Apify provides authenticated access to LinkedIn job listings via proxy-backed actors. This unlocks `/find-jobs --apify`, an opt-in source that searches LinkedIn without browser automation and returns skills data, applicant insights, and recruiter details unavailable from public scraping.
 
 **Setup:**
 1. Create an account at [apify.com](https://apify.com) — free tier available
@@ -229,7 +229,7 @@ Apify provides authenticated access to LinkedIn job listings via proxy-backed ac
 3. Add to `.env`: `APIFY_TOKEN=your_token_here`
 4. The `.mcp.json` file already has the Apify MCP configured
 
-**Note:** Using Apify to scrape LinkedIn may conflict with LinkedIn's terms of service. Mode 5 is provided as an opt-in for users who accept that risk.
+**Note:** Using Apify to scrape LinkedIn may conflict with LinkedIn's terms of service. This source is provided as an opt-in for users who accept that risk.
 
 ---
 
